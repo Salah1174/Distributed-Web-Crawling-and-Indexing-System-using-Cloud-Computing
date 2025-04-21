@@ -1,0 +1,66 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seed URL Submission</title>
+    <style>
+        body { font-family: Arial; padding: 20px; max-width: 400px; margin: auto; }
+        input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
+    </style>
+</head>
+<body>
+    <h2>Submit Seed URL</h2>
+    <input type="text" id="url" placeholder="Seed URL" required>
+    <input type="number" id="depth" placeholder="Crawl Depth" required>
+    <button onclick="sendToSQS()">Send</button>
+
+    <p id="response"></p>
+<script>
+
+
+async function sendToSQS() {
+    const url = document.getElementById('url').value;
+    const depth = document.getElementById('depth').value;
+    const resElem = document.getElementById('response');
+
+    const payload = { url, depth };
+    console.log('[Client] Preparing to send payload:', payload);
+
+    try {
+        const response = await fetch('http://54.88.141.236:5000/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+
+        const raw = await response.text();
+        console.log('[Client] Raw response text:', raw);
+
+        try {
+            const data = JSON.parse(raw);
+            resElem.innerText = data.message || 'Success';
+      } catch (parseError) {
+            console.error('[Client] JSON parse error:', parseError);
+            resElem.innerText = 'Invalid JSON from server: ' + parseError + '\n' + raw;
+        }
+    } catch (err) {
+        console.error('[Client] Fetch/network error:', err);
+        resElem.innerText = 'Network or CORS error: ' + err;
+    }
+}
+
+
+
+
+</script>
+
+
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1370.0.min.js"></script>
+</body>
+</html>
+
