@@ -78,7 +78,8 @@ class LearncrawlingDownloaderMiddleware:
         # - or return a Request object
         # - or raise IgnoreRequest: process_exception() methods of
         #   installed downloader middleware will be called
-        request.meta['proxy'] = "http://scrapingdog:Your-API-Key@proxy.scrapingdog.com:8081"
+
+        # request.meta['proxy'] = "http://scrapingdog:680802c3893994f4db142de0@proxy.scrapingdog.com:8081"
         return None
 
     def process_response(self, request, response, spider):

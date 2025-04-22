@@ -52,7 +52,8 @@ CONCURRENT_REQUESTS_PER_IP = 16
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
    "learncrawling.middlewares.LearncrawlingDownloaderMiddleware": 543,
-   
+    # "scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware": 110,
+
 }
 
 # Enable or disable extensions

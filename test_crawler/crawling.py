@@ -1,3 +1,5 @@
+import os
+import json
 import requests
 from bs4 import BeautifulSoup
 
@@ -10,18 +12,11 @@ if response.status_code == 200:
 else:
     print(f"Failed to retrieve the webpage. Status code: {response.status_code}")
 
-
-
-
-
-    # Parse the content using BeautifulSoup
+# Parse the content using BeautifulSoup
 soup = BeautifulSoup(response.text, 'html.parser')
 
 # Print the parsed content
 print(soup.prettify())  # To view the page structure
-
-
-
 
 # Extract all links (anchor tags)
 links = soup.find_all('a')
@@ -30,9 +25,19 @@ links = soup.find_all('a')
 for link in links:
     print(link.get('href'))
 
+def save_page_to_json(url, content):
+    # Create a directory to store JSON files if it doesn't exist
+    os.makedirs("crawled_pages", exist_ok=True)
 
+    # Generate a valid filename from the URL
+    filename = url.replace("https://", "").replace("http://", "").replace("/", "_") + ".json"
+    filepath = os.path.join("crawled_pages", filename)
 
-    # Function to crawl a webpage
+    # Save the content to a JSON file
+    with open(filepath, "w", encoding="utf-8") as f:
+        json.dump(content, f, ensure_ascii=False, indent=4)
+
+# Function to crawl a webpage
 def crawl(url, depth=2):
     if depth == 0:
         return  # Limit crawling depth to avoid infinite loops
@@ -46,12 +51,15 @@ def crawl(url, depth=2):
 
     soup = BeautifulSoup(response.text, 'html.parser')
 
+    # Save the current page content to a JSON file
+    page_content = {
+        "url": url,
+        "html": soup.prettify(),
+    }
+    save_page_to_json(url, page_content)
+
     # Extract links from the current page
     links = soup.find_all('a', href=True)
-
-    # Print links on the page
-    for link in links:
-        print(link.get('href'))
 
     # Recursively crawl the linked pages
     for link in links:
