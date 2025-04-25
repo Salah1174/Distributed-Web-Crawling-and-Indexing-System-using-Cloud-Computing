@@ -1,32 +1,59 @@
 import boto3
 import json
 import pymysql
-import os
 import time
+import os
+import requests
 
-from dotenv import load_dotenv
-load_dotenv()
 
 # AWS setup
 sqs = boto3.client('sqs', region_name='us-east-1')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/ResultQueue'
 
-# RDS setup 
+# RDS setup
 db_config = {
-    "host": os.getenv("RDS_HOST"),
-    "user": os.getenv("RDS_USER"),
-    "password": os.getenv("RDS_PASSWORD"),
-    "database": os.getenv("RDS_DATABASE")
+    "host": "index-db.cyv2uaoamjlb.us-east-1.rds.amazonaws.com",  
+    "user": "admin",                   
+    "database": "new_schema",          
+    "region": "us-east-1"                     
 }
 
+def download_ca_certificate():
+    """Download the RDS CA certificate dynamically."""
+    url = "https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem"
+    cert_path = "/tmp/rds-combined-ca-bundle.pem"
+    if not os.path.exists(cert_path):
+        response = requests.get(url)
+        with open(cert_path, "wb") as cert_file:
+            cert_file.write(response.content)
+    return cert_path
+
+
+def get_iam_token():
+    """Generate an IAM token for RDS authentication."""
+    client = boto3.client('rds', region_name=db_config["region"])
+    token = client.generate_db_auth_token(
+        DBHostname=db_config["host"],
+        Port=3306,  
+        DBUsername=db_config["user"]
+    )
+    return token
+
 def store_in_rds(data):
+    connection = None 
     try:
-        # Connect to RDS 
+        # Generate IAM token
+        token = get_iam_token()
+        
+        ca_cert_path = download_ca_certificate()
+
+        # Connect to RDS using the IAM token
         connection = pymysql.connect(
             host=db_config["host"],
             user=db_config["user"],
-            password=db_config["password"],
-            database=db_config["database"]
+            password=token,
+            database=db_config["database"],
+            # ssl={"ca": ca_cert_path}  # Use the RDS CA certificate
         )
         cursor = connection.cursor()
 
