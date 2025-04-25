@@ -43,15 +43,19 @@ def store_in_rds(data):
     connection = None 
     try:
         # Generate IAM token
-        token = get_iam_token()
+        # token = get_iam_token()
         
-        ca_cert_path = download_ca_certificate()
+        # ca_cert_path = download_ca_certificate()
+        
+        password = os.getenv("RDS_PASSWORD")
+        if not password:
+            raise ValueError("RDS_PASSWORD environment variable is not set")
 
         # Connect to RDS using the IAM token
         connection = pymysql.connect(
             host=db_config["host"],
             user=db_config["user"],
-            password=token,
+            password=password,
             database=db_config["database"],
             # ssl={"ca": ca_cert_path}  # Use the RDS CA certificate
         )
@@ -59,7 +63,7 @@ def store_in_rds(data):
 
         # Insert the data into the table
         sql = """
-        INSERT INTO crawled_data (url, title, description, keywords, s3_key, s3_bucket)
+        INSERT INTO indexed_data (url, title, description, keywords, s3_key, s3_bucket)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
         cursor.execute(sql, (
