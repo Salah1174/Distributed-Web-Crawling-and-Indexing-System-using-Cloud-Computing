@@ -43,7 +43,7 @@ class CrawlingSpider(CrawlSpider):
             self.allowed_domains = [base_domain] + additional
         else:
             self.allowed_domains = [base_domain]
-  def parse_item(self, response):
+    def parse_item(self, response):
         if self.page_count >= self.max_pages:
             self.crawler.engine.close_spider(self, reason="max_pages limit reached")
             return
