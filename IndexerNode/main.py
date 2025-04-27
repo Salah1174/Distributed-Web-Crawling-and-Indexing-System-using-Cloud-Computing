@@ -57,7 +57,6 @@ def get_rds_connection():
     return connection
 
 def execute_query(query, params=None, fetch_results=False):
-    """Helper function to execute a query on the RDS database."""
     connection = None
     try:
         connection = get_rds_connection()
@@ -82,39 +81,12 @@ def execute_query(query, params=None, fetch_results=False):
 def store_in_rds(data):
     # connection = None 
     try:
-        # # Generate IAM token
-        # # token = get_iam_token()
-        
-        # # ca_cert_path = download_ca_certificate()
-        
-        # password = os.getenv("RDS_PASSWORD")
-        # if not password:
-        #     raise ValueError("RDS_PASSWORD environment variable is not set")
-
-        # # Connect to RDS using the IAM token
-        # connection = pymysql.connect(
-        #     host=db_config["host"],
-        #     user=db_config["user"],
-        #     password=password,
-        #     database=db_config["database"],
-        #     # ssl={"ca": ca_cert_path}  # Use the RDS CA certificate
-        # )
-        # cursor = connection.cursor()
 
         # Insert the data into the table
         sql = """
         INSERT INTO indexed_data (url, title, description, keywords, s3_key, s3_bucket)
         VALUES (%s, %s, %s, %s, %s, %s)
         """
-        # cursor.execute(sql, (
-        #     data["url"],
-        #     data.get("title"),
-        #     data.get("description"),
-        #     data.get("keywords"),
-        #     data.get("s3_key"),
-        #     data.get("s3_bucket")
-        # ))
-        # connection.commit()
         
         params = (
             data["url"],
@@ -130,9 +102,7 @@ def store_in_rds(data):
         print(f"Stored data for URL: {data['url']} in RDS.")
     except Exception as e:
         print(f"Failed to store data in RDS: {e}")
-    # finally:
-    #     if connection:
-    #         connection.close()
+
 
 def process_message(message):
     try:
@@ -174,75 +144,6 @@ def process_search_request(message):
     except Exception as e:
         print(f"Failed to process search request: {e}")        
         
-# def process_seed_message(message):
-#     """Process a seed URL message from the SQS queue."""
-#     try:
-
-#         body = json.loads(message['Body'])
-#         url = body.get('url')
-
-#         if not url:
-#             print("Invalid seed URL message")
-#             return
-
-  
-#         crawled_data = {
-#             "url": url,
-#             "title": "Sample Title",
-#             "description": "Sample Description",
-#             "keywords": "sample,example,keyword",
-#             "s3_key": "sample-key",
-#             "s3_bucket": "sample-bucket"
-#         }
-#         store_in_rds(crawled_data)
-#         print(f"Processed seed URL: {url}")
-#     except Exception as e:
-#         print(f"Failed to process seed message: {e}")
-
-# def process_search_request(message):
-#     """Process a search request from the SQS queue."""
-#     try:
-#         # Parse the message body
-#         body = json.loads(message['Body'])
-#         keywords = body.get('keywords')
-#         request_id = body.get('request_id')
-
-#         if not keywords or not request_id:
-#             print("Invalid search request")
-#             return
-
-#         # Query the RDS database
-#         connection = None
-#         try:
-#             connection = get_rds_connection()
-#             cursor = connection.cursor(pymysql.cursors.DictCursor)
-
-#             # Search the indexed_data table
-#             sql = """
-#             SELECT url, title, description, keywords, s3_key, s3_bucket
-#             FROM indexed_data
-#             WHERE keywords LIKE %s
-#             """
-#             cursor.execute(sql, (f"%{keywords}%",))
-#             results = cursor.fetchall()
-
-#             # Send the results to the response queue
-#             response = {
-#                 'request_id': request_id,
-#                 'results': results
-#             }
-#             sqs.send_message(
-#                 QueueUrl=search_response_queue_url,
-#                 MessageBody=json.dumps(response)
-#             )
-#             print(f"Search results sent for request ID: {request_id}")
-#         except Exception as e:
-#             print(f"Failed to query RDS: {e}")
-#         finally:
-#             if connection:
-#                 connection.close()
-#     except Exception as e:
-#         print(f"Failed to process search request: {e}")
 
 
 def main():
@@ -287,8 +188,7 @@ def main():
                 print(f"Deleted search request with receipt handle: {receipt_handle}")
 
 
-        # Sleep for a short time before polling again
-        # time.sleep(5)
+        time.sleep(2)
         
         
 
