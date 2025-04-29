@@ -32,75 +32,88 @@ Scalable architecture leveraging AWS cloud services.
 ***
 
 ## Steps to Use
-1. Prerequisites
+### 1. Prerequisites
 
-AWS account with access to SQS, RDS, and S3.
-Python 3.8+ installed on all nodes.
-Required Python libraries installed:
-``` pip install boto3 pymysql flask flask-cors scrapy ```
+- AWS account with access to SQS, RDS, and S3.
+- Python 3.8+ installed on all nodes.
+- Required Python libraries installed:
 
-2. Setting Up AWS Resources
+```bash
+pip install boto3 pymysql flask flask-cors scrapy 
+```
 
-    1. Create SQS Queues:
+### 2. Setting Up AWS Resources
 
-        - Client_Master_Queue: For seed URLs.
-        - SearchQueue: For search queries.
-        - ResultQueue: For crawled data.
-        - SearchResponseQueue: For search results.
+1. Create SQS Queues:
 
-    2. Set Up RDS:
+    - Client_Master_Queue: For seed URLs.
+    - SearchQueue: For search queries.
+    - ResultQueue: For crawled data.
+    - SearchResponseQueue: For search results.
 
-        - Create an RDS instance with a database named new_schema.
-        - Use the following schema for the indexed_data table:
-                ``` 
-                CREATE TABLE indexed_data (
-                url VARCHAR(255) NOT NULL,
-                title VARCHAR(255),
-                description TEXT,
-                keywords TEXT,
-                s3_key VARCHAR(255),
-                s3_bucket VARCHAR(255),
-                PRIMARY KEY (url)
-            ); 
-            ```
+2. Set Up RDS:
 
-    3. Create an S3 Bucket:
+    - Create an RDS instance with a database named new_schema.
+    - Use the following schema for the indexed_data table:
+      ```SQL 
+            CREATE TABLE indexed_data (
+            url VARCHAR(255) NOT NULL,
+            title VARCHAR(255),
+            description TEXT,
+            keywords TEXT,
+            s3_key VARCHAR(255),
+            s3_bucket VARCHAR(255),
+            PRIMARY KEY (url)
+        ); 
+        ```
 
-        - Store crawled HTML files in the bucket.
+3. Create an S3 Bucket:
 
-    4. Configure IAM Roles:
+    - Store crawled HTML files in the bucket.
 
-        - Ensure all nodes have the necessary permissions to access SQS, RDS, and S3.
+4. Configure IAM Roles:
 
-3. Running the System
+    - Ensure all nodes have the necessary permissions to access SQS, RDS, and S3.
 
-    **Client Node**
-    1. Start the Flask server:
-        ``` python Client_Backend.py ```
-    2. Access the client interface via the public IP of the server:
-    > http://<PUBLIC_IP>:5000
-    3. Submit a seed URL and depth or a search query.
+### 3. Running the System
 
-    **Master Node**
-    1. Start the Master Node script:
-    `` python master.py``
-    2. Monitor the Client_Master_Queue for incoming tasks.
+**Client Node**
+1. Start the Flask server:
+```python
+python Client_Backend.py 
+```
+2. Access the client interface via the public IP of the server:
+> http://<PUBLIC_IP>:5000
+3. Submit a seed URL and depth or a search query.
 
-    **Crawler Nodes**
-    1. Start the crawler script
-    `` python crawling_spider.py``
-    2. Ensure the crawler retrieves tasks from the TaskQueue and uploads results to S3.
+**Master Node**
+1. Start the Master Node script:
+```python
+ python master.py
+```
+2. Monitor the Client_Master_Queue for incoming tasks.
 
-    **Indexer Node**
-    1. Start the indexer script
-    `` python main.py``
+**Crawler Nodes**
+1. Start the crawler script
+```python
+ python crawling_spider.py
+```
+2. Ensure the crawler retrieves tasks from the TaskQueue and uploads results to S3.
 
-       Alternatively, Deploy the Indexer Node as a systemd service:
-    `` sudo systemctl start indexer.service``
+**Indexer Node**
+1. Start the indexer script
+```python
+ python main.py
+```
 
-    2. Monitor the ResultQueue and SearchQueue for messages.
+Alternatively, Deploy the Indexer Node as a systemd service:
+```linux
+sudo systemctl start indexer.service
+```
 
-    ***
+2. Monitor the ResultQueue and SearchQueue for messages.
+
+***
 
 ## Testing and Debugging
 ### End-to-End Testing
