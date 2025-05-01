@@ -93,7 +93,7 @@ async function getSearchResults() {
     const resElem = document.getElementById('searchResponse');
 
     try {
-        const response = await fetch('http://<BACKEND_IP>:5000/get-search-results', {
+        const response = await fetch('http://54.88.141.236:5000:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'

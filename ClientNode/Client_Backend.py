@@ -59,12 +59,36 @@ def send_search_query_to_sqs():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-qs = boto3.client(
-    'sqs',
-    region_name='us-east-1',
-    aws_access_key_id='your-access-key-id',  # Replace with your AWS Access Key ID
-    aws_secret_access_key='your-secret-access-key'  # Replace with your AWS Secret Access Key
-)
+@app.route('/get-search-results', methods=['GET'])
+def get_search_results():
+    """Retrieve search results from the SearchQueue."""
+    try:
+        # Receive a message from the SQS queue
+        response = sqs.receive_message(
+            QueueUrl=search_queue_url,
+            MaxNumberOfMessages=1,  # Retrieve one message at a time
+            WaitTimeSeconds=5  # Long polling for up to 5 seconds
+        )
+
+        # Check if any messages were received
+        messages = response.get('Messages', [])
+        if not messages:
+            return jsonify({'message': 'No search results available.'}), 200
+
+        # Process the first message
+        message = messages[0]
+        receipt_handle = message['ReceiptHandle']
+        body = json.loads(message['Body'])
+
+        # Delete the message from the queue after processing
+        sqs.delete_message(
+            QueueUrl=search_queue_url,
+            ReceiptHandle=receipt_handle
+        )
+
+        return jsonify({'results': body}), 200
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
