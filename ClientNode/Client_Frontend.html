@@ -63,29 +63,28 @@ async function sendSeedToSQS() {
 }
 
 async function sendSearchToSQS() {
-            const keywords = document.getElementById('keywords').value;
-            const resElem = document.getElementById('searchResponse');
+    const keywords = document.getElementById('keywords').value;
+    const resElem = document.getElementById('searchResponse');
 
-            const payload = { keywords };
-            console.log('[Client] Preparing to send search payload:', payload);
+    console.log('[Client] Preparing to send search keyword:', keywords);
 
-            try {
-                const response = await fetch('http://54.88.141.236:5000/send-search', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload),
-                    mode: 'cors',
-                    cache: 'no-cache'
-                });
+    try {
+        const response = await fetch('http://54.88.141.236:5000/send-search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'text/plain'
+            },
+            body: keywords,
+            mode: 'cors',
+            cache: 'no-cache'
+        });
 
-                const data = await response.json();
-                resElem.innerText = data.message || 'Search query sent successfully!';
-            } catch (err) {
-                console.error('[Client] Fetch/network error:', err);
-                resElem.innerText = 'Network or CORS error: ' + err;
-            }
+        const data = await response.json();
+        resElem.innerText = data.message || 'Search query sent successfully!';
+    } catch (err) {
+        console.error('[Client] Fetch/network error:', err);
+        resElem.innerText = 'Network or CORS error: ' + err;
+    }
 }
 
 
@@ -93,7 +92,7 @@ async function getSearchResults() {
     const resElem = document.getElementById('searchResponse');
 
     try {
-        const response = await fetch('http://54.88.141.236:5000:5000/get-search-results', {
+        const response = await fetch('http://54.88.141.236:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'

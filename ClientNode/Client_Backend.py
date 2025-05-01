@@ -37,14 +37,18 @@ def send_seed_to_sqs():
 @app.route('/send-search', methods=['POST'])
 def send_search_query_to_sqs():
     """Send a search query to the SearchQueue."""
-    data = request.get_json()
-    if not data or 'keywords' not in data:
-        return jsonify({'error': 'Invalid JSON payload or missing "keywords"'}), 400
-
     try:
+        # Get the raw data from the request body
+        keywords = request.data.decode('utf-8').strip()
+        if not keywords:
+            return jsonify({'error': 'Missing keywords in request body'}), 400
+
         # Generate a unique request ID for the search query
         request_id = str(uuid.uuid4())
-        data['request_id'] = request_id
+        data = {
+            'request_id': request_id,
+            'keywords': keywords
+        }
 
         # Send the search query to the SQS queue
         response = sqs.send_message(
@@ -58,7 +62,7 @@ def send_search_query_to_sqs():
         }), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
+    
 @app.route('/get-search-results', methods=['GET'])
 def get_search_results():
     """Retrieve search results from the SearchQueue."""
