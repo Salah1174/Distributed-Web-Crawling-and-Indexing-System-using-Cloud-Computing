@@ -60,7 +60,6 @@ def send_status_message():
     except Exception as e:
         print(f"Failed to send status message: {e}")
         
-import threading
 
 def heartbeat():
     while True:
@@ -108,30 +107,39 @@ def execute_query(query, params=None, fetch_results=False):
         if connection:
             connection.close()
 
-def store_in_rds(data):
+def store_in_rds(data, max_retries=3, retry_delay=5):
     # connection = None 
-    try:
+    retries = 0
+    while retries < max_retries:
+        try:
 
-        # Insert the data into the table
-        sql = """
-        INSERT INTO indexed_data (url, title, description, keywords, s3_key, s3_bucket)
-        VALUES (%s, %s, %s, %s, %s, %s)
-        """
-        
-        params = (
-            data["url"],
-            data.get("title"),
-            data.get("description"),
-            data.get("keywords"),
-            data.get("s3_key"),
-            data.get("s3_bucket")
-        )
-        execute_query(sql, params)
-        
-        
-        print(f"Stored data for URL: {data['url']} in RDS.")
-    except Exception as e:
-        print(f"Failed to store data in RDS: {e}")
+            # Insert the data into the table
+            sql = """
+            INSERT INTO indexed_data (url, title, description, keywords, s3_key, s3_bucket)
+            VALUES (%s, %s, %s, %s, %s, %s)
+            """
+            
+            params = (
+                data["url"],
+                data.get("title"),
+                data.get("description"),
+                data.get("keywords"),
+                data.get("s3_key"),
+                data.get("s3_bucket")
+            )
+            execute_query(sql, params)
+            
+            
+            print(f"Stored data for URL: {data['url']} in RDS.")
+        except Exception as e:
+            retries += 1
+            print(f"Failed to store data in RDS (attempt {retries}/{max_retries}): {e}")
+            if retries < max_retries:
+                print(f"Retrying in {retry_delay} seconds...")
+                time.sleep(retry_delay)
+            else:
+                print(f"Max retries reached. Failed to store data for URL: {data['url']}")
+                raise 
 
 
 def process_message(message):
