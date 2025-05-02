@@ -16,7 +16,7 @@ search_response_queue_url = "https://sqs.us-east-1.amazonaws.com/608542499503/Se
 overallStatus = 1  # 1 -> running succesfully
 runningStatus = 1  # 0 ->  busy, 1 ->  free
 
-status_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Indexer_Status'
+status_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/IndexerStatus'
 
 # RDS setup
 db_config = {
@@ -187,6 +187,7 @@ def process_search_request(message):
         
         
 def main():
+    global runningStatus
     while True:
         print("Polling for messages...")
         response = sqs.receive_message(
