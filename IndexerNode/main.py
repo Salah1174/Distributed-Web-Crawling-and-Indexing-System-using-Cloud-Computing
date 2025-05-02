@@ -3,7 +3,8 @@ import json
 import pymysql
 import time
 import os
-import requests
+# import requests
+import threading
 
 
 # AWS setup
@@ -11,6 +12,11 @@ sqs = boto3.client('sqs', region_name='us-east-1')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/ResultQueue'
 search_request_queue_url ="https://sqs.us-east-1.amazonaws.com/608542499503/SearchQueue"
 search_response_queue_url = "https://sqs.us-east-1.amazonaws.com/608542499503/SearchResponseQueue"
+
+overallStatus = 1  # 1 -> running succesfully
+runningStatus = 1  # 0 ->  busy, 1 ->  free
+
+status_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Indexer_Status'
 
 # RDS setup
 db_config = {
@@ -41,13 +47,37 @@ db_config = {
 #     )
 #     return token
 
+def send_status_message():
+    try:
+        sqs.send_message(
+            QueueUrl=status_queue_url,
+            MessageBody=json.dumps({
+                "overallStatus": overallStatus,  
+                "runningStatus": runningStatus  
+            })
+        )
+        print(f"Sent status message: overallStatus={overallStatus}, runningStatus={runningStatus}")
+    except Exception as e:
+        print(f"Failed to send status message: {e}")
+        
+import threading
+
+def heartbeat():
+    while True:
+        send_status_message()
+        time.sleep(5)  
+
+# start thread
+heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
+heartbeat_thread.start()
+
 def get_rds_connection():
-    """Establish a connection to the RDS database."""
+    """establish rds connection."""
     password = os.getenv("RDS_PASSWORD")  
     if not password:
         raise ValueError("RDS_PASSWORD environment variable is not set")
 
-    # Connect to RDS
+    # connect to RDS
     connection = pymysql.connect(
         host=db_config["host"],
         user=db_config["user"],
@@ -167,16 +197,19 @@ def main():
 
         if 'Messages' not in response:
             print("No messages in queue.")
+            runningStatus = 1
             # continue
 
         else:
             for message in response['Messages']:
+                runningStatus = 0 
                 process_message(message)
 
-                # Delete the message after processing
+                # delete after to avoid conflicts
                 receipt_handle = message['ReceiptHandle']
                 sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
                 print(f"Deleted message with receipt handle: {receipt_handle}")
+                runningStatus = 1 
            
         print("Polling for messages in SearchQueue...")    
         search_response = sqs.receive_message(
@@ -188,14 +221,17 @@ def main():
 
         if 'Messages' not in search_response:
             print("No messages in SearchQueue.")
+            runningStatus = 1
         else:
             for message in search_response['Messages']:
+                runningStatus = 0
                 process_search_request(message)
 
-                # Delete the message after processing
+                # delete after to avoid conflicts
                 receipt_handle = message['ReceiptHandle']
                 sqs.delete_message(QueueUrl=search_request_queue_url, ReceiptHandle=receipt_handle)
                 print(f"Deleted search request with receipt handle: {receipt_handle}")
+                runningStatus = 1 
 
 
         time.sleep(2)
