@@ -108,22 +108,30 @@ def process_message(message):
     try:
         # Parse the message body
         body = json.loads(message['Body'])
+        required_fields = ["url", "title", "description", "keywords", "s3_key", "s3_bucket"]
+        for field in required_fields:
+            if field not in body or body[field] is None:
+                raise ValueError(f"Missing required field: {field}")
+            
         store_in_rds(body)
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format: {e}")
+    except ValueError as e:
+        print(f"Validation error: {e}")
     except Exception as e:
         print(f"Failed to process message: {e}")
-
+        
+        
 def process_search_request(message):
     try:
-        # Parse the message body
+
         body = json.loads(message['Body'])
-        keywords = body.get('keywords')
-        request_id = body.get('request_id')
+        if 'keywords' not in body or 'request_id' not in body:
+            raise ValueError("Missing required fields: 'keywords' and/or 'request_id'")
 
-        if not keywords or not request_id:
-            print("Invalid search request")
-            return
+        keywords = body['keywords']
+        request_id = body['request_id']
 
-        # Query the indexed_data table
         sql = """
         SELECT url, title, description, keywords, s3_key, s3_bucket
         FROM indexed_data
@@ -131,7 +139,6 @@ def process_search_request(message):
         """
         results = execute_query(sql, (f"%{keywords}%",), fetch_results=True)
 
-        # Send the results to the response queue
         response = {
             'request_id': request_id,
             'results': results
@@ -141,11 +148,14 @@ def process_search_request(message):
             MessageBody=json.dumps(response)
         )
         print(f"Search results sent for request ID: {request_id}")
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format: {e}")
+    except ValueError as e:
+        print(f"Validation error: {e}")
     except Exception as e:
-        print(f"Failed to process search request: {e}")        
+        print(f"Failed to process search request: {e}")
         
-
-
+        
 def main():
     while True:
         print("Polling for messages...")
