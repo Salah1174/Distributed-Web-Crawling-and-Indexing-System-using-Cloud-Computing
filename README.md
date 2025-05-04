@@ -17,17 +17,19 @@ This project implements a distributed web crawling and indexing system using clo
 The system consists of the following components:
 
 1. Client Node: Sends seed URLs and search queries to the system.
-2. Master Node: Manages the distribution of crawling tasks to Crawler Nodes.
+2. Master Node: Manages the distribution of crawling tasks to Crawler Nodes. It interacts with an RDS database to store and update the status of URLs and ensures that duplicate URLs are not processed. It also sends tasks to the TaskQueue for Crawler Nodes.
 3. Crawler Nodes: Perform web crawling, extract metadata, and store results in S3.
 4. Indexer Node: Processes crawled data, stores it in RDS, and handles search queries.
 
 ---
 
 ## Key Features
-Distributed crawling with support for multiple nodes.
-Metadata extraction and storage in AWS RDS.
-Search functionality with results delivered via AWS SQS.
-Scalable architecture leveraging AWS cloud services.
+- Distributed crawling with support for multiple nodes.
+- Metadata extraction and storage in AWS RDS.
+- Search functionality with results delivered via AWS SQS.
+- Scalable architecture leveraging AWS cloud services.
+- Fault tolerance with heartbeat monitoring, retry logic, deduplication, and error handling.
+- Autoscaling for the Worker Nodes (crawlers and indexers) based on workload.
 
 ***
 
@@ -50,21 +52,31 @@ pip install boto3 pymysql flask flask-cors scrapy
     - SearchQueue: For search queries.
     - ResultQueue: For crawled data.
     - SearchResponseQueue: For search results.
+    - IndexerStatusQueue: For heartbeat monitoring of the Indexer Node.
 
 2. Set Up RDS:
 
-    - Create an RDS instance with a database named new_schema.
-    - Use the following schema for the indexed_data table:
-      ```SQL 
-            CREATE TABLE indexed_data (
+    - Create an RDS instance and create a database .
+    - Use the following schema for the "indexed_data" table used by the Indexer node to store indexed data:
+        ```SQL 
+                CREATE TABLE indexed_data (
+                url VARCHAR(255) NOT NULL,
+                title VARCHAR(255),
+                description TEXT,
+                keywords TEXT,
+                s3_key VARCHAR(255),
+                s3_bucket VARCHAR(255),
+                PRIMARY KEY (url)
+            ); 
+            ```
+    - Create another schema for the URLS table used by the Master Node:
+        ```SQL
+            CREATE TABLE Urls (
             url VARCHAR(255) NOT NULL,
-            title VARCHAR(255),
-            description TEXT,
-            keywords TEXT,
-            s3_key VARCHAR(255),
-            s3_bucket VARCHAR(255),
+            status ENUM('NEW', 'CRAWLED', 'INDEXED', 'ERROR') NOT NULL,
+            depth INT NOT NULL,
             PRIMARY KEY (url)
-        ); 
+            );
         ```
 
 3. Create an S3 Bucket:
@@ -106,12 +118,29 @@ python Client_Backend.py
  python main.py
 ```
 
-Alternatively, Deploy the Indexer Node as a systemd service:
+Alternatively, Deploy the Worker Nodes as a systemd service:
 ```linux
 sudo systemctl start indexer.service
 ```
 
 2. Monitor the ResultQueue and SearchQueue for messages.
+
+***
+
+## Autoscaling 
+1. Launch Template:
+- Create a launch template for the Worker Nodes with the following:
+    - AMI with Python 3 and required dependencies pre-installed.
+    - Bootstrap script to configure the instance and start the Nodes.
+    - IAM role with permissions for SQS, RDS, and S3.
+
+2. Scaling Policies:
+
+    - Add the appropriate scaling policies
+
+3. Monitoring:
+
+    - Use CloudWatch to monitor the scaling activity.
 
 ***
 
@@ -128,7 +157,7 @@ sudo systemctl start indexer.service
     - Client Node: Flask logs.
     - Master Node: Console output.
     - Crawler Nodes: Scrapy logs.
-    - Indexer Node: Systemd logs.
+    - Indexer Node: Console output.
 
 ***
 ## Data Flow Diagram
