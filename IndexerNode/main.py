@@ -131,6 +131,8 @@ def store_in_rds(data, max_retries=3, retry_delay=5):
             
             
             print(f"Stored data for URL: {data['url']} in RDS.")
+            break
+            
         except Exception as e:
             retries += 1
             print(f"Failed to store data in RDS (attempt {retries}/{max_retries}): {e}")
