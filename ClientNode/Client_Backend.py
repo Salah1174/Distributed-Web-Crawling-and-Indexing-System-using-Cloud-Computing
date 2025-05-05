@@ -16,6 +16,8 @@ queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Client_Master_Queu
 search_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/SearchQueue'
 search_response_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/SearchResponseQueue'
 
+
+    
 @app.route('/send', methods=['POST'])
 def send_seed_to_sqs():
     data = request.get_json()
@@ -37,29 +39,15 @@ def send_seed_to_sqs():
     
 @app.route('/send-search', methods=['POST'])
 def send_search_query_to_sqs():
+    body = request.get_json(force=True)
+    keywords = body.get('keywords')
+    if not keywords:
+        return jsonify({'error': 'Missing keywords in JSON body'}), 400
     try:
-
-        keywords = request.data.decode('utf-8').strip()
-        if not keywords:
-            return jsonify({'error': 'Missing keywords in request body'}), 400
-
-
         request_id = str(uuid.uuid4())
-        data = {
-            'request_id': request_id,
-            'keywords': keywords
-        }
-
-
-        response = sqs.send_message(
-            QueueUrl=search_queue_url,
-            MessageBody=json.dumps(data)
-        )
-        return jsonify({
-            'message': 'Search query sent to SQS!',
-            'request_id': request_id,
-            'aws_response': response
-        }), 200
+        message = {'request_id': request_id, 'keywords': keywords}
+        resp = sqs.send_message(QueueUrl=search_queue_url, MessageBody=json.dumps(message))
+        return jsonify({'message': 'Search query sent to SQS!', 'request_id': request_id, 'aws_response': resp}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
     

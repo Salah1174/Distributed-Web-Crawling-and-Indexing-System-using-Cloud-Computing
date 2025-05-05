@@ -102,6 +102,13 @@ button:focus {
 .input-fields {
   margin-top: 25px;
 }
+.parent-container {
+  display: flex;
+  justify-content: flex-start; 
+  align-items: flex-start; 
+  gap: 20px; 
+  /* height: 100%;  */
+}
 
 .container1 {
   display: -webkit-box;
@@ -117,7 +124,9 @@ button:focus {
   -ms-flex-pack:  center;
   justify-content:  center;
   background: #eee;
-  height: 90%;
+  height: 100%;
+  margin-top: 10%;
+  margin-left: 10%;
 }
 
 .container2 {
@@ -208,10 +217,10 @@ button:focus {
   flex-flow: column;
   box-shadow: 0px 15px 50px 10px rgba(0, 0, 0, 0.2);
   box-sizing: border-box;
-  height: 90%;
+  height: 100%;
   width: 360px;
   background: #fff;
-  background: url('https://pexels.imgix.net/photos/27718/pexels-photo-27718.jpg?fit=crop&w=1280&h=823') top left no-repeat;
+ 
 }
 
 .overlay {
@@ -232,10 +241,10 @@ button:focus {
   bottom: 0px;
   margin: auto;
   width: 100%;
-  height: 300px;
+  height: 100;
   z-index: 1;
   opacity:0.1;
-    background: url('https://c1.staticflickr.com/7/6025/5972016444_df51b5cde1.jpg') left no-repeat;
+    background: url('https://c.pxhere.com/images/00/af/38fa6ed6693e2605434b528c05e4-1575603.jpg!d') left no-repeat;
   background-size:cover;
   
 }
@@ -306,6 +315,21 @@ button:focus {
     transition: all 500ms cubic-bezier(0, 0.110, 0.35, 2);
   }
   
+  .result-item {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.result-item h3 {
+    margin: 0 0 5px;
+}
+
+.result-item p {
+    margin: 5px 0;
+}
   
   
   /*  footer   */
@@ -349,5 +373,8 @@ button:focus {
   .overlay {
     width: 100%;
     height: 100%;
+  }
+  .parent-container {
+    flex-direction: column; 
   }
 }
