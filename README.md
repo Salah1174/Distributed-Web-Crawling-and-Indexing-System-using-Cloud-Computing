@@ -19,7 +19,7 @@ The system consists of the following components:
 1. Client Node: Sends seed URLs and search queries to the system.
 2. Master Node: Manages the distribution of crawling tasks to Crawler Nodes. It interacts with an RDS database to store and update the status of URLs and ensures that duplicate URLs are not processed. It also sends tasks to the TaskQueue for Crawler Nodes.
 3. Crawler Nodes: Perform web crawling, extract metadata, and store results in S3.
-4. Indexer Node: Processes crawled data, stores it in RDS, and handles search queries.
+4. Indexer Nodes: Processes crawled data, stores it in RDS, and handles search queries.
 
 ---
 
@@ -159,7 +159,7 @@ sudo systemctl start indexer.service
     - Crawler Nodes: Scrapy logs.
     - Indexer Node: Console output.
 
-***
-## Data Flow Diagram
+<!-- *** -->
+<!-- ## Data Flow Diagram
 
-![Data Flow Diagram](/.images/DataFlow.png)
+![Data Flow Diagram](/.images/DataFlow.png) -->

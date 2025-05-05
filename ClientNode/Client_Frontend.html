@@ -3,26 +3,74 @@
 <html>
 <head>
     <title>Seed URL Submission</title>
-    <style>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <!-- <style>
         body { font-family: Arial; padding: 20px; max-width: 400px; margin: auto; }
         input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
-    </style>
+    </style> -->
 </head>
 <body>
-    <h2>Submit Seed URL</h2>
+
+<div class='bold-line'></div>
+<div class='container1'>
+  <div class='window'>
+    <div class='overlay'></div>
+    <div class='content1'>
+      <div class='welcome'>Submit Seed URL</div>
+      <div class='input-fields'>
+      <input class='input-line full-width' type="text" id="url" placeholder="Seed URL" required>
+    <input class='input-line full-width' type="number" id="depth" placeholder="Crawl Depth" required></div>
+    <div><button class="ghost-round full-width" onclick="sendSeedToSQS()">Send</button></div>
+    <p id="seedResponse"></p></div>
+
+    <div class='content2'>
+    <div class='welcome'>Submit Search Query</div>
+            <!-- <div class='input-fields'></div>
+            <input class='input-line full-width' type="text" id="keywords" placeholder="Search Keywords" required> -->
+
+            <div class="search-box">
+                <button class="btn-search" onclick="submitSearchAndDisplayResults()"><i class="fas fa-search" ></i></button>
+                <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required></div>
+            <!-- <div><button class="ghost-round full-width" onclick="submitSearchAndDisplayResults()">Search</button></div> -->
+    <p id="searchResponse"></p>
+    
+    </div>
+    </div>
+
+      <!-- <div class='subtitle'>We're almost done. Before using our services you need to create an account.</div> -->
+   
+   
+      <!-- <h2>Submit Seed URL</h2>
     <input type="text" id="url" placeholder="Seed URL" required>
     <input type="number" id="depth" placeholder="Crawl Depth" required>
-    <button onclick="sendSeedToSQS()">Send</button>
+    <button onclick="sendSeedToSQS()">Send</button> -->
+    
 
-    <p id="seedResponse"></p>
 
-    <h2>Submit Search Query</h2>
+<!-- 
+
+    <div class='container2'>
+        <div class='window'>
+          <div class='overlay'></div>
+          <div class='content'> -->
+            
+            <!-- </div>
+            </div>
+        </div> -->
+    <!-- <h2>Submit Search Query</h2>
+    <input type="text" id="keywords" placeholder="Search Keywords" required>
+    <button onclick="submitSearchAndDisplayResults()">Search indexed keywords</button> -->
+
+
+
+    <!-- <h2>Submit Search Query</h2>
     <input type="text" id="keywords" placeholder="Search Keywords" required>
     <button onclick="sendSearchToSQS()">Send Search Query</button>
 
     <button onclick="getSearchResults()">Get Search Results</button>
 
-    <p id="searchResponse"></p>
+    <p id="searchResponse"></p> -->
     
 <script>
 
@@ -62,14 +110,15 @@ async function sendSeedToSQS() {
     }
 }
 
-async function sendSearchToSQS() {
+async function submitSearchAndDisplayResults() {
     const keywords = document.getElementById('keywords').value;
     const resElem = document.getElementById('searchResponse');
 
     console.log('[Client] Preparing to send search keyword:', keywords);
 
     try {
-        const response = await fetch('http://54.88.141.236:5000/send-search', {
+        // Send 
+        const sendResponse = await fetch('http://54.88.141.236:5000/send-search', {
             method: 'POST',
             headers: {
                 'Content-Type': 'text/plain'
@@ -79,36 +128,35 @@ async function sendSearchToSQS() {
             cache: 'no-cache'
         });
 
-        const data = await response.json();
-        resElem.innerText = data.message || 'Search query sent successfully!';
-    } catch (err) {
-        console.error('[Client] Fetch/network error:', err);
-        resElem.innerText = 'Network or CORS error: ' + err;
-    }
-}
+        const sendData = await sendResponse.json();
+        console.log('[Client] Search query sent:', sendData.message || 'Search query sent successfully!');
+        resElem.innerText = 'Search query sent. Waiting for results...';
 
-
-async function getSearchResults() {
-    const resElem = document.getElementById('searchResponse');
-
-    try {
-        const response = await fetch('http://54.88.141.236:5000/get-search-results', {
+        // fetch 
+        const resultsResponse = await fetch('http://54.88.141.236:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
         });
 
-        const data = await response.json();
-        if (data.results) {
-            resElem.innerText = JSON.stringify(data.results, null, 2);
+        const resultsData = await resultsResponse.json();
+        if (resultsData.results) {
+            resElem.innerText = JSON.stringify(resultsData.results, null, 2);
         } else {
-            resElem.innerText = data.message || 'No results found.';
+            resElem.innerText = resultsData.message || 'No results found.';
         }
     } catch (err) {
         console.error('[Client] Fetch/network error:', err);
         resElem.innerText = 'Network or CORS error: ' + err;
     }
 }
+
+document.getElementById('keywords').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // Prevent the default form submission behavior
+        document.querySelector('.btn-search').click(); // Trigger the search button click
+    }
+});
 
 
 
