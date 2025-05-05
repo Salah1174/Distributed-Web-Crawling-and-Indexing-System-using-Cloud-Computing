@@ -235,8 +235,9 @@ button:focus {
   height: 300px;
   z-index: 1;
   opacity:0.1;
-    background: url('https://pexels.imgix.net/photos/27718/pexels-photo-27718.jpg?fit=crop&w=1280&h=823') left no-repeat;
+    background: url('https://c1.staticflickr.com/7/6025/5972016444_df51b5cde1.jpg') left no-repeat;
   background-size:cover;
+  
 }
 
 *{
