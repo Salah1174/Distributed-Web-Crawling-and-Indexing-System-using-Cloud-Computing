@@ -118,6 +118,7 @@ def process_search_request(message):
         body = json.loads(message['Body'])
         keywords = body.get('keywords')
         request_id = body.get('request_id')
+        title = body.get('title')
 
         if not keywords or not request_id:
             print("Invalid search request")
@@ -129,7 +130,7 @@ def process_search_request(message):
         FROM indexed_data
         WHERE keywords LIKE %s
         """
-        results = execute_query(sql, (f"%{keywords}%",), fetch_results=True)
+        results = execute_query(sql, (f"%{title}%",), fetch_results=True)
 
         # Send the results to the response queue
         response = {
