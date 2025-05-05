@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Seed & Search UI</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    /* Base styles */
+    body, html { margin: 0; padding: 0; font-family: 'Roboto', sans-serif; background: #f0f2f5; color: #333; }
+    .container { max-width: 800px; margin: 40px auto; padding: 0 20px; }
+    h1 { text-align: center; margin-bottom: 30px; }
+
+    /* Form card styles */
+    .card { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 20px; overflow: hidden; }
+    .card-header { background: #4A90E2; color: #fff; padding: 16px; font-size: 1.2rem; }
+    .card-body { padding: 16px; }
+
+    .input-group { display: flex; margin-bottom: 12px; }
+    .input-group input { flex: 1; padding: 10px 12px; border: 1px solid #ccc; border-radius: 4px 0 0 4px; font-size: 1rem; }
+    .input-group button { padding: 0 16px; border: none; background: #4A90E2; color: #fff; font-size: 1rem; cursor: pointer; border-radius: 0 4px 4px 0; }
+    .input-group button:hover { background: #357ABD; }
+
+    /* Results card styles */
+    .results-container { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+    .result-card { background: #fff; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); padding: 16px; display: flex; flex-direction: column; }
+    .result-card h3 { margin: 0 0 10px; font-size: 1.1rem; color: #4A90E2; }
+    .result-card p { flex: 1; font-size: 0.95rem; margin: 6px 0; }
+    .result-card a { color: #4A90E2; text-decoration: none; font-weight: 500; }
+    .result-card a:hover { text-decoration: underline; }
+
+    /* Feedback text */
+    .feedback { margin-top: 10px; font-style: italic; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Web Crawler Interface</h1>
+
+    <!-- Seed Submission -->
+    <div class="card">
+      <div class="card-header">Submit Seed URL</div>
+      <div class="card-body">
+        <div class="input-group">
+          <input type="text" id="url" placeholder="Seed URL">
+          <button onclick="sendSeedToSQS()">Send</button>
+        </div>
+        <div class="input-group">
+          <input type="number" id="depth" placeholder="Crawl Depth">
+        </div>
+        <div id="seedResponse" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Search Submission -->
+    <div class="card">
+      <div class="card-header">Submit Search Query</div>
+      <div class="card-body">
+        <div class="input-group">
+          <input type="text" id="keywords" placeholder="Search Keywords">
+          <button onclick="submitSearch()"><i class="fas fa-search"></i></button>
+        </div>
+        <div id="searchResponse" class="feedback"></div>
+      </div>
+    </div>
+
+    <!-- Search Results -->
+    <div class="card">
+      <div class="card-header">Search Results</div>
+      <div class="card-body">
+        <div id="resultsContainer" class="results-container"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // POST seed URL + depth to /send
+  async function sendSeedToSQS() {
+    const url = document.getElementById('url').value;
+    const depth = document.getElementById('depth').value;
+    const feedback = document.getElementById('seedResponse');
+    feedback.textContent = 'Sending...';
+
+    try {
+      const resp = await fetch('http://<EC2_PUBLIC_DNS>:5000/send', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({url, depth}), mode: 'cors'
+      });
+      const data = await resp.json();
+      feedback.textContent = data.message;
+    } catch (err) {
+      feedback.textContent = 'Error sending seed: ' + err;
+    }
+  }
+
+  // POST search keywords then fetch results
+  async function submitSearch() {
+    const keywords = document.getElementById('keywords').value;
+    const feedback = document.getElementById('searchResponse');
+    feedback.textContent = 'Searching...';
+
+    try {
+      const resp = await fetch('http://<EC2_PUBLIC_DNS>:5000/send-search', {
+        method: 'POST', headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({keywords}), mode: 'cors'
+      });
+      const { request_id } = await resp.json();
+      displayResults(request_id);
+      feedback.textContent = '';
+    } catch (err) {
+      feedback.textContent = 'Error submitting search: ' + err;
+    }
+  }
+
+  // Fetch and display results as cards
+  async function displayResults(requestId) {
+    const container = document.getElementById('resultsContainer');
+    container.innerHTML = '<p class="feedback">Loading results...</p>';
+    try {
+      const resp = await fetch('http://<EC2_PUBLIC_DNS>:5000/get-search-results', {mode:'cors'});
+      const { results, message } = await resp.json();
+      if (!results) {
+        container.innerHTML = <p class="feedback">${message}</p>;
+        return;
+      }
+
+      container.innerHTML = '';
+      results.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'result-card';
+        card.innerHTML = `
+          <h3>${item.title}</h3>
+          <p><strong>Keywords:</strong> ${item.keywords}</p>
+          <p>${item.description}</p>
+          <p><strong>S3:</strong> <a href="https://s3.amazonaws.com/${item.s3_bucket}/${item.s3_key}" target="_blank">View Source</a></p>
+          <p><strong>URL:</strong> <a href="${item.url}" target="_blank">${item.url}</a></p>
+        `;
+        container.appendChild(card);
+      });
+    } catch (err) {
+      container.innerHTML = <p class="feedback">Error loading results: ${err}</p>;
+    }
+  }
+</script>

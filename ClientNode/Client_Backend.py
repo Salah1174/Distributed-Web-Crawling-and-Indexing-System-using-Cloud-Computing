@@ -54,33 +54,34 @@ def send_search_query_to_sqs():
 @app.route('/get-search-results', methods=['GET'])
 def get_search_results():
     try:
-     
         response = sqs.receive_message(
             QueueUrl=search_response_queue_url,
-            MaxNumberOfMessages=1,  
-            WaitTimeSeconds=5  
+            MaxNumberOfMessages=1,
+            WaitTimeSeconds=5
         )
 
-    
         messages = response.get('Messages', [])
         if not messages:
-            return jsonify({'message': 'No search results available.'}), 200
+            return jsonify({'message': 'No search results available.', 'results': []}), 200
 
-        
         message = messages[0]
         receipt_handle = message['ReceiptHandle']
         body = json.loads(message['Body'])
 
-        
+        # Ensure results is always an array
+        results = body.get('results', [])
+        if not isinstance(results, list):
+            results = [results]  # Wrap single result in an array
+
+        # Delete the message from the queue
         sqs.delete_message(
             QueueUrl=search_response_queue_url,
             ReceiptHandle=receipt_handle
         )
 
-        return jsonify({'results': body}), 200
+        return jsonify({'results': results}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
