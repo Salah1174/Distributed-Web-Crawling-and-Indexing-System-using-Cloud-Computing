@@ -7,6 +7,30 @@ import os
 import threading
 
 
+from whoosh.index import create_in, open_dir
+from whoosh.fields import Schema, TEXT, ID
+from whoosh.qparser import QueryParser
+
+# whoosh schema 
+schema = Schema(
+    url=ID(stored=True, unique=True),
+    title=TEXT(stored=True),
+    description=TEXT(stored=True),
+    keywords=TEXT(stored=True),
+    s3_key=ID(stored=True),
+    s3_bucket=ID(stored=True)
+)
+
+# open  whoosh index
+index_dir = "whoosh_index"
+if not os.path.exists(index_dir):
+    os.mkdir(index_dir)
+    ix = create_in(index_dir, schema)
+else:
+    ix = open_dir(index_dir)
+
+
+
 # AWS setup
 sqs = boto3.client('sqs', region_name='us-east-1')
 queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/ResultQueue'
@@ -26,27 +50,7 @@ db_config = {
     "region": "us-east-1"                     
 }
 
-# def download_ca_certificate():
-#     """Download the RDS CA certificate dynamically."""
-#     url = "https://s3.amazonaws.com/rds-downloads/rds-combined-ca-bundle.pem"
-#     cert_path = "/tmp/rds-combined-ca-bundle.pem"
-#     if not os.path.exists(cert_path):
-#         response = requests.get(url)
-#         with open(cert_path, "wb") as cert_file:
-#             cert_file.write(response.content)
-#     return cert_path
-
-
-# def get_iam_token():
-#     """Generate an IAM token for RDS authentication."""
-#     client = boto3.client('rds', region_name=db_config["region"])
-#     token = client.generate_db_auth_token(
-#         DBHostname=db_config["host"],
-#         Port=3306,  
-#         DBUsername=db_config["user"]
-#     )
-#     return token
-
+#heartbeat code
 def send_status_message():
     try:
         sqs.send_message(
@@ -69,6 +73,8 @@ def heartbeat():
 # start thread
 heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
 heartbeat_thread.start()
+
+
 
 def get_rds_connection():
     """establish rds connection."""
@@ -108,12 +114,12 @@ def execute_query(query, params=None, fetch_results=False):
             connection.close()
 
 def store_in_rds(data, max_retries=3, retry_delay=5):
-    # connection = None 
+
     retries = 0
     while retries < max_retries:
         try:
-
-            # Insert the data into the table
+            
+            #store in rds
             sql = """
             INSERT INTO indexed_data (url, title, description, keywords, s3_key, s3_bucket)
             VALUES (%s, %s, %s, %s, %s, %s)
@@ -134,8 +140,9 @@ def store_in_rds(data, max_retries=3, retry_delay=5):
             break
             
         except Exception as e:
+            print(f"Failed to index data in Whoosh: {e}")
             retries += 1
-            print(f"Failed to store data in RDS (attempt {retries}/{max_retries}): {e}")
+           
             if retries < max_retries:
                 print(f"Retrying in {retry_delay} seconds...")
                 time.sleep(retry_delay)
@@ -144,14 +151,31 @@ def store_in_rds(data, max_retries=3, retry_delay=5):
                 raise 
 
 
+def index_in_whoosh(data):
+    try:
+        writer = ix.writer()
+        writer.add_document(
+            url=data["url"],
+            title=data.get("title", ""),
+            description=data.get("description", ""),
+            keywords=data.get("keywords", "")
+        )
+        writer.commit()
+        print(f"Indexed data for URL: {data['url']} in Whoosh.")
+    except Exception as e:
+        print(f"Failed to index data in Whoosh: {e}")
+        raise
+    
 def process_message(message):
     try:
-        # Parse the message body
+        
         body = json.loads(message['Body'])
         required_fields = ["url", "title", "description", "keywords", "s3_key", "s3_bucket"]
         for field in required_fields:
             if field not in body or body[field] is None:
                 raise ValueError(f"Missing required field: {field}")
+            
+        index_in_whoosh(body)
             
         store_in_rds(body)
     except json.JSONDecodeError as e:
@@ -172,16 +196,35 @@ def process_search_request(message):
         keywords = body['keywords']
         request_id = body['request_id']
 
-        sql = """
-        SELECT url, title, description, keywords, s3_key, s3_bucket
-        FROM indexed_data
-        WHERE keywords LIKE %s
-        """
-        results = execute_query(sql, (f"%{keywords}%",), fetch_results=True)
+        with ix.searcher() as searcher:
+            query = QueryParser("keywords", ix.schema).parse(keywords)
+            results = searcher.search(query, limit=10)  # limit to top 10 results
+
+            urls = [result["url"] for result in results]
+
+        # Fetch full data from RDS
+        if urls:
+            placeholders = ', '.join(['%s'] * len(urls))
+            sql = f"""
+            SELECT url, title, description, keywords, s3_key, s3_bucket
+            FROM indexed_data
+            WHERE url IN ({placeholders})
+            """
+            full_results = execute_query(sql, urls, fetch_results=True)
+        else:
+            full_results = []
+
+
+        # sql = """
+        # SELECT url, title, description, keywords, s3_key, s3_bucket
+        # FROM indexed_data
+        # WHERE keywords LIKE %s
+        # """
+        # results = execute_query(sql, (f"%{keywords}%",), fetch_results=True)
 
         response = {
             'request_id': request_id,
-            'results': results
+            'results': full_results
         }
         sqs.send_message(
             QueueUrl=search_response_queue_url,

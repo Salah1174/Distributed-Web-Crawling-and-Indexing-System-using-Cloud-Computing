@@ -20,8 +20,11 @@
       <input class='input-line full-width' type="text" id="url" placeholder="Seed URL" required>
     <input class='input-line full-width' type="number" id="depth" placeholder="Crawl Depth" required></div>
     <div><button class="ghost-round full-width" onclick="sendSeedToSQS()">Send</button></div>
-    <p id="seedResponse"></p></div>
+    <p id="seedResponse"></p></div></div>
 
+    <div class ="container2">
+        <div class='window'>
+            <div class='overlay'></div>
     <div class='content2'>
     <div class='welcome'>Submit Search Query</div>
         
@@ -29,7 +32,10 @@
                 <button class="btn-search" onclick="submitSearchAndDisplayResults()"><i class="fas fa-search" ></i></button>
                 <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required></div>
             
-    <p id="searchResponse"></p>
+    <div id="searchResponseContainer" class="search-response-container">
+        <div class="search-results-header">Search Results</div>
+        <div id="resultsContainer" class="results-container">
+    <p id="searchResponse"></p></div>
     <!-- <div class="card">
         <div class="card-header">Search Results</div>
         <div class="card-body">
@@ -82,53 +88,6 @@ async function sendSeedToSQS() {
 }
 
 
-// async function submitSearch() {
-//     const keywords = document.getElementById('keywords').value;
-//     const feedback = document.getElementById('searchResponse');
-//     feedback.textContent = 'Searching...';
-
-//     try {
-//       const resp = await fetch('http://<EC2_PUBLIC_DNS>:5000/send-search', {
-//         method: 'POST', headers: {'Content-Type': 'application/json'},
-//         body: JSON.stringify({keywords}), mode: 'cors'
-//       });
-//       const { request_id } = await resp.json();
-//       displayResults(request_id);
-//       feedback.textContent = '';
-//     } catch (err) {
-//       feedback.textContent = 'Error submitting search: ' + err;
-//     }
-//   }
-
-//   // Fetch and display results as cards
-//   async function displayResults(requestId) {
-//     const container = document.getElementById('resultsContainer');
-//     container.innerHTML = '<p class="feedback">Loading results...</p>';
-//     try {
-//       const resp = await fetch('http://<EC2_PUBLIC_DNS>:5000/get-search-results', {mode:'cors'});
-//       const { results, message } = await resp.json();
-//       if (!results) {
-//         container.innerHTML = '<p class="feedback">${message}</p>;'
-//         return;
-//       }
-
-//       container.innerHTML = '';
-//       results.forEach(item => {
-//         const card = document.createElement('div');
-//         card.className = 'result-card';
-//         card.innerHTML = `
-//           <h3>${item.title}</h3>
-//           <p><strong>Keywords:</strong> ${item.keywords}</p>
-//           <p>${item.description}</p>
-//           <p><strong>S3:</strong> <a href="https://s3.amazonaws.com/${item.s3_bucket}/${item.s3_key}" target="_blank">View Source</a></p>
-//           <p><strong>URL:</strong> <a href="${item.url}" target="_blank">${item.url}</a></p>
-//         `;
-//         container.appendChild(card);
-//       });
-//     } catch (err) {
-//       container.innerHTML = '<p class="feedback">Error loading results: ${err}</p>;'
-//     }
-//   }
 
 
 async function submitSearchAndDisplayResults() {
@@ -166,47 +125,42 @@ async function submitSearchAndDisplayResults() {
 
         const resultsData = await resultsResponse.json();
         if (resultsData.results ) {
-            // Clear previous results
-            resElem.innerHTML = '';
-
-            // Loop through each result and display the details
             resultsData.results.forEach(result => {
-                const resultDiv = document.createElement('div');
-                resultDiv.classList.add('result-item');
+                const card = document.createElement('div');
+                card.classList.add('result-card');
 
-                // Add title
                 const titleElem = document.createElement('h3');
-                titleElem.textContent = `Title: ${result.title}`;
-                resultDiv.appendChild(titleElem);
+                titleElem.textContent = result.title || 'No Title';
+                card.appendChild(titleElem);
 
-                // Add URL
                 const urlElem = document.createElement('p');
                 const urlLink = document.createElement('a');
-                urlLink.href = result.url;
-                urlLink.textContent = `URL: ${result.url}`;
-                urlLink.target = '_blank'; // Open in a new tab
+                urlLink.href = result.url || '#';
+                urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                urlLink.target = '_blank';
                 urlElem.appendChild(urlLink);
-                resultDiv.appendChild(urlElem);
+                card.appendChild(urlElem);
 
-                // Add keywords
                 const keywordsElem = document.createElement('p');
-                keywordsElem.textContent = `Keywords: ${result.keywords}`;
-                resultDiv.appendChild(keywordsElem);
+                keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                card.appendChild(keywordsElem);
 
-                // Add description
                 const descriptionElem = document.createElement('p');
-                descriptionElem.textContent = `Description: ${result.description}`;
-                resultDiv.appendChild(descriptionElem);
+                descriptionElem.textContent = result.description || 'No Description';
+                card.appendChild(descriptionElem);
 
-                // Append the result to the response element
-                resElem.appendChild(resultDiv);
+                resultsContainer.appendChild(card);
             });
-        } else {
-            resElem.innerText = resultsData.message || 'No results found.';
+        } else { const noResults = document.createElement('p');
+            noResults.classList.add('feedback');
+            noResults.textContent = resultsData.message || 'No search results available.';
+            resultsContainer.appendChild(noResults);resElem.innerText = resultsData.message || 'No results found.';
         }
     } catch (err) {
         console.error('[Client] Fetch/network error:', err);
         resElem.innerText = 'Network or CORS error: ' + err;
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '<p class="feedback">Error loading results.</p>';
     }
 }
 
@@ -218,6 +172,40 @@ document.getElementById('keywords').addEventListener('keydown', function (event)
 });
 
 
+// const resultsContainer = document.getElementById('resultsContainer');
+// resultsContainer.innerHTML = ''; // Clear previous results
+
+// resultsData.results.forEach(result => {
+//     const resultDiv = document.createElement('div');
+//     resultDiv.classList.add('result-item');
+
+//     // Add title
+//     const titleElem = document.createElement('h3');
+//     titleElem.textContent = `Title: ${result.title}`;
+//     resultDiv.appendChild(titleElem);
+
+//     // Add URL
+//     const urlElem = document.createElement('p');
+//     const urlLink = document.createElement('a');
+//     urlLink.href = result.url;
+//     urlLink.textContent = `URL: ${result.url}`;
+//     urlLink.target = '_blank'; // Open in a new tab
+//     urlElem.appendChild(urlLink);
+//     resultDiv.appendChild(urlElem);
+
+//     // Add keywords
+//     const keywordsElem = document.createElement('p');
+//     keywordsElem.textContent = `Keywords: ${result.keywords}`;
+//     resultDiv.appendChild(keywordsElem);
+
+//     // Add description
+//     const descriptionElem = document.createElement('p');
+//     descriptionElem.textContent = `Description: ${result.description}`;
+//     resultDiv.appendChild(descriptionElem);
+
+//     // Append the result to the results container
+//     resultsContainer.appendChild(resultDiv);
+// });
 
 
 </script>
