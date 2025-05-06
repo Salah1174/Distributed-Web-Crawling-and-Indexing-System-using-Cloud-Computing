@@ -6,7 +6,7 @@ from whoosh.index import create_in, open_dir
 from indexing_utils import schema
 
 def main():
-    last_indexed_url = [None]  
+    last_indexed_url = {"value": None}
     running_status = 1  
 
     index_dir = "whoosh_index"

@@ -19,7 +19,7 @@ def process_message(message , last_indexed_url,ix):
         index_in_whoosh(body, ix)
             
         store_in_rds(body)
-        last_indexed_url[0] = body["url"]
+        last_indexed_url["value"] = body["url"]
     except json.JSONDecodeError as e:
         print(f"Invalid JSON format: {e}")
     except ValueError as e:

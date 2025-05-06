@@ -13,7 +13,7 @@ def send_status_message(status_queue_url, overall_status, running_status, last_i
             "overallStatus": overall_status,
             "runningStatus": running_status,
             "ip_address": ip_address,
-            "last_indexed_url": last_indexed_url
+            "last_indexed_url": last_indexed_url["value"] 
         }
         send_sqs_message(status_queue_url, heartbeat_message)
     except Exception as e:
