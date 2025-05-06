@@ -94,7 +94,7 @@ python3 -m nltk.downloader punkt punkt_tab stopwords
                 s3_bucket VARCHAR(255),
                 PRIMARY KEY (url)
             ); 
-            ```
+      ```
     - Create another schema for the URLS table used by the Master Node:
         ```SQL
             CREATE TABLE Urls (
