@@ -4,7 +4,6 @@
     <title>Seed URL Submission</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 </head>
 <body>
@@ -46,12 +45,12 @@
                         </button>
                         <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required>
                     </div>
-                    <div id="searchResponseContainer" class="search-response-container">
+                    <!-- <div id="searchResponseContainer" class="search-response-container"> -->
                         <div class="search-results-header">Search Results</div>
                         <div id="resultsContainer" class="results-container">
                             <p id="searchResponse"></p>
                         </div>
-                    </div>
+                    <!-- </div> -->
                 </div>
             </div>
         </div> <!-- Close container2 -->
@@ -180,6 +179,24 @@
                 </tbody>
             </table>
         </div>
+
+        <div class="container3">
+            <div class="window">
+                <div class="overlay"></div>
+                <div class="content1">
+                    <div class="welcome">System Stats</div>
+                    <div class="stat">
+                        <div class = "statstitles">Crawled URLs:</div>
+                        <span id="crawledCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <div class="statstitles">Indexed URLs:</div>
+                        <span id="indexedCount">0</span>
+                    </div>
+                </div>
+            </div>
+        
+        
         <!-- Font Awesome JS CDN -->
         <script src=
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"
@@ -206,7 +223,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://44.204.18.153:5000/send', {
+        const response = await fetch('http://3.85.233.34:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -238,17 +255,25 @@ async function sendSeedToSQS() {
 async function submitSearchAndDisplayResults() {
     const keywords = document.getElementById('keywords').value;
     const resElem = document.getElementById('searchResponse');
+    const resultsContainer = document.getElementById('resultsContainer');
+    // const searchResponseContainer = document.getElementById('searchResponseContainer');
+    const searchResultsHeader = document.querySelector('.search-results-header');
+    const container2 = document.querySelector('.container2');
 
     console.log('[Client] Preparing to send search keyword:', keywords);
 
     try {
         // Send 
-        const keywords = document.getElementById('keywords').value;
-        const resElem = document.getElementById('searchResponse');
+        
+        container2.classList.remove('expanded')
+        searchResultsHeader.style.display = 'none';
+        // resultsContainer.innerHTML = ''; 
+        
+
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://44.204.18.153:5000/send-search', {
+            const response = await fetch('http://3.85.233.34:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -262,14 +287,16 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://44.204.18.153:5000/get-search-results', {
+        const resultsResponse = await fetch('http://3.85.233.34:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
         });
 
         const resultsData = await resultsResponse.json();
+        
         if (resultsData.results ) {
+            searchResultsHeader.style.display = 'block';
             resultsData.results.forEach(result => {
                 const card = document.createElement('div');
                 card.classList.add('result-card');
@@ -296,6 +323,15 @@ async function submitSearchAndDisplayResults() {
 
                 resultsContainer.appendChild(card);
             });
+
+            if (!container2.contains(resultsContainer)) {
+            container2.appendChild(resultsContainer);
+            }
+            
+            container2.classList.add('expanded');
+       
+            
+            
         } else { const noResults = document.createElement('p');
             noResults.classList.add('feedback');
             noResults.textContent = resultsData.message || 'No search results available.';

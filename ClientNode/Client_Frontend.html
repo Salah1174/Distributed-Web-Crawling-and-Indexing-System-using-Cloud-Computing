@@ -61,7 +61,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://54.88.141.236:5000/send', {
+        const response = await fetch('http://127.0.0.1:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -103,7 +103,7 @@ async function submitSearchAndDisplayResults() {
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://44.204.18.153:5000/send-search', {
+            const response = await fetch('http://127.0.0.1:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -117,7 +117,7 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://44.204.18.153:5000/get-search-results', {
+        const resultsResponse = await fetch('http://127.0.0.1:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -153,7 +153,7 @@ async function submitSearchAndDisplayResults() {
             });
         } else { const noResults = document.createElement('p');
             noResults.classList.add('feedback');
-            noResults.textContent = resultsData.message || 'No search results available.';
+            // noResults.textContent = resultsData.message || 'No search results available.';
             resultsContainer.appendChild(noResults);resElem.innerText = resultsData.message || 'No results found.';
         }
     } catch (err) {

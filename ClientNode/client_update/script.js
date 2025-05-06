@@ -336,3 +336,27 @@ function fetchNodeData(nodeId) {
         // Assume you're processing data here...
     }, 1000);
 }
+
+
+function updateStats(crawled, indexed) {
+    document.getElementById('crawledCount').textContent = crawled;
+    document.getElementById('indexedCount').textContent = indexed;
+}
+
+//not sure?
+// async function fetchStats() {
+//     try {
+//         const response = await fetch('http://44.204.18.153:5000/stats', {
+//             method: 'GET',
+//             mode: 'cors',
+//             cache: 'no-cache'
+//         });
+//         const data = await response.json();
+//         updateStats(data.crawled, data.indexed);
+//     } catch (err) {
+//         console.error('[Client] Failed to fetch stats:', err);
+//     }
+// }
+
+// // peridoic call
+// setInterval(fetchStats, 5000);

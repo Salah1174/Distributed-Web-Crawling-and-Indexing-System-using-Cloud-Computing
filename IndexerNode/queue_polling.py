@@ -22,7 +22,7 @@ def poll_result_queue(queue_url, last_indexed_url, running_status,ix):
                 print(f"Deleted message with receipt handle: {receipt_handle}")
                 running_status = 1
                 send_status_message(status_queue_url, overall_status, running_status, last_indexed_url)
-                last_indexed_url["value"] = None
+                last_indexed_url = {"value": None}
         time.sleep(2)
 
 def poll_search_queue(search_request_queue_url, ix, search_response_queue_url, running_status):
