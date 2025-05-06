@@ -9,7 +9,9 @@ import threading
 
 from whoosh.index import create_in, open_dir
 from whoosh.fields import Schema, TEXT, ID
-from whoosh.qparser import QueryParser
+# from whoosh.qparser import QueryParser
+# from whoosh.query import Term
+from whoosh.qparser import MultifieldParser, OrGroup
 
 # whoosh schema 
 schema = Schema(
@@ -68,7 +70,7 @@ def send_status_message():
 def heartbeat():
     while True:
         send_status_message()
-        time.sleep(5)  
+        time.sleep(60)  
 
 # start thread
 heartbeat_thread = threading.Thread(target=heartbeat, daemon=True)
@@ -197,7 +199,13 @@ def process_search_request(message):
         request_id = body['request_id']
 
         with ix.searcher() as searcher:
-            query = QueryParser("keywords", ix.schema).parse(keywords)
+            # query = QueryParser("keywords", ix.schema).parse(f'"{keywords}"')
+            parser = MultifieldParser(["title^2", "description", "keywords"],  # boost "title" field
+                                        ix.schema,
+                                        group=OrGroup
+                                     )
+            # query = Term("keywords", keywords)
+            query = parser.parse(keywords)
             results = searcher.search(query, limit=10)  # limit to top 10 results
 
             urls = [result["url"] for result in results]
