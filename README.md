@@ -9,18 +9,33 @@
 
 ## Overview
 
-This project implements a distributed web crawling and indexing system using cloud computing services. The system is designed to efficiently crawl web pages, extract metadata, and store the results in a scalable and searchable format. It leverages AWS services such as SQS, RDS, and S3 for communication, storage, and processing.
+This project implements a distributed web crawling and indexing system using cloud computing services. The system is designed to efficiently crawl web pages, extract metadata, and store the results in a scalable and searchable format. It leverages AWS services such as SQS, RDS, and S3 for communication, storage, and processing. The system is modularized into smaller components for better maintainability.
 
 ----
 
 ## System Architecture
 The system consists of the following components:
 
-1. Client Node: Sends seed URLs and search queries to the system.
-2. Master Node: Manages the distribution of crawling tasks to Crawler Nodes. It interacts with an RDS database to store and update the status of URLs and ensures that duplicate URLs are not processed. It also sends tasks to the TaskQueue for Crawler Nodes.
-3. Crawler Nodes: Perform web crawling, extract metadata, and store results in S3.
-4. Indexer Nodes: Processes crawled data, stores it in RDS, and handles search queries.
-
+1. Client Node: 
+    - Sends seed URLs and search queries to the system via a Flask-based interface.
+    - Communicates with the Master Node through the `Client_Master_Queue`.
+    - Displays nodes status for monitoring.
+2. Master Node:
+    - Manages the distribution of crawling tasks to Crawler Nodes.
+    - Sends tasks to the queue `TaskQueue` for Crawler Nodes to process.
+    - Interacts with an RDS database to store and update the status of URLs.
+    - Ensures that duplicate URLs are not processed.
+    - Tracks the health of worker nodes (Crawler and Indexer Nodes) using heartbeat messages.
+3. Crawler Nodes:
+    - Perform web crawling and extract metadata (e.g., title, description, keywords).
+    - Store crawled HTML files in S3.
+    - Send crawled urls to Indexer nodes through a queue `ResultQueue` to index them.
+    - Send periodic heartbeat messages to their status queue `Crawler_Status`, including their IP address and the last crawled URL.
+4. Indexer Nodes: 
+    - Process crawled data retrieved from the Crawler Nodes through the queue `ResultQueue`.
+    - Index the data using the Whoosh library, applying stemming, analysing keywords and cleaning text before storing it in the Whoosh index and RDS.
+    - Handle search queries from the Client recieved thourgh `SearchQueue` and return results to the `SearchResponseQueue` for the Client to display.
+    - Send periodic heartbeat messages to the `IndexerStatusQueue`, including their IP address and the last indexed URL.
 ---
 
 ## Key Features
@@ -40,9 +55,20 @@ The system consists of the following components:
 - Python 3.8+ installed on all nodes.
 - Required Python libraries installed:
 
+1. Client node:
 ```bash
-pip install boto3 pymysql flask flask-cors scrapy 
+pip install boto3 flask flask-cors 
 ```
+2. Crawler nodes:
+```bash
+pip install boto3 scrapy 
+```
+3. Indexer nodes
+```bash
+pip install boto3 pymysql scrapy nltk whoosh
+python3 -m nltk.downloader punkt punkt_tab stopwords
+```
+
 
 ### 2. Setting Up AWS Resources
 
@@ -91,8 +117,33 @@ pip install boto3 pymysql flask flask-cors scrapy
 
 **Client Node**
 1. Start the Flask server:
-```python
+```bash
 python Client_Backend.py 
+```
+Alternatively, Deploy it as a systemd service:
+
+- Example service template:
+
+```bash
+[Unit]
+Description=Backend Service
+After=network.target
+
+[Service]
+User=ec2-user
+WorkingDirectory=<working dir here>
+ExecStart=/usr/bin/python3 <backend file to be run>
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
+
+```
+- Then enable and start this service:
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable indexer.service
+sudo systemctl start indexer.service
 ```
 2. Access the client interface via the public IP of the server:
 > http://<PUBLIC_IP>:5000
@@ -100,30 +151,43 @@ python Client_Backend.py
 
 **Master Node**
 1. Start the Master Node script:
-```python
+```bash
  python master.py
 ```
-2. Monitor the Client_Master_Queue for incoming tasks.
+2. Monitor the `Client_Master_Queue` for incoming tasks.
+
+3. Check logs for task distribution and heartbeat monitoring.
 
 **Crawler Nodes**
 1. Start the crawler script
-```python
+```bash
  python crawling_spider.py
 ```
 2. Ensure the crawler retrieves tasks from the TaskQueue and uploads results to S3.
 
+3. Monitor the `Crawler_Status` queue for heartbeat messages to ensure the node is active.
+
 **Indexer Node**
 1. Start the indexer script
-```python
+
+```bash
  python main.py
 ```
 
-Alternatively, Deploy the Worker Nodes as a systemd service:
-```linux
-sudo systemctl start indexer.service
-```
+Alternatively, Deploy the Worker Nodes as a systemd service using steps listed in client node.
 
-2. Monitor the ResultQueue and SearchQueue for messages.
+2. In our code we set the RDS password as a environment variable to avoid hardcoding it, so it could be set on the instance itself :
+```bash
+export RDS_PASSWORD=<your_rds_password>
+```
+ Alternatively, add it to the systemd service file.
+ ```bash
+Environment="RDS_PASSWORD=<your_rds_password>"
+ ```
+
+3. Monitor the ResultQueue and SearchQueue for messages.
+
+4. Check the `IndexerStatusQueue` for heartbeat messages to ensure the node is active.
 
 ***
 
@@ -137,11 +201,14 @@ sudo systemctl start indexer.service
 2. Scaling Policies:
 
     - Add the appropriate scaling policies
+    - As an example our system uses CloudWatch metrics (e.g., SQS queue length) to trigger autoscaling events., where Worker Nodes (Crawler and Indexer Nodes) are scaled up or down based on the number of pending tasks in the queues.
 
 3. Monitoring:
 
     - Use CloudWatch to monitor the scaling activity.
 
+### notes
+- Fault Tolerance: Heartbeat monitoring implemented in our code ensures that failed nodes are detected and replaced automatically.
 ***
 
 ## Testing and Debugging
@@ -153,11 +220,31 @@ sudo systemctl start indexer.service
 
 ### Debugging Tips
 - Use AWS CloudWatch to monitor SQS queues and RDS performance.
+- Check status queues for heartbeat messages to ensure all nodes are active and reporting their status.
 - Check logs for each node:
     - Client Node: Flask logs.
     - Master Node: Console output.
     - Crawler Nodes: Scrapy logs.
     - Indexer Node: Console output.
+
+
+## Data Flow Overview
+1. **Seed URLs**:
+    - The Client Node sends seed URLs to the Master Node via the `Client_Master_Queue`.
+    - The Master Node distributes these URLs to Crawler Nodes via the `TaskQueue`.
+
+2. **Crawling**:
+    - Crawler Nodes fetch the web pages, extract metadata, and store the HTML files in S3.
+    - The crawled data is sent to the `ResultQueue`.
+    - Periodically sends hearbeat messages to the `Client_Status` queue.
+
+3. **Indexing**:
+    - Indexer Nodes process the crawled data from the `ResultQueue`, index it using Whoosh, and store it in RDS.
+
+4. **Search**:
+    - The Client Node sends search queries to the `SearchQueue`.
+    - Indexer Nodes process the queries and return results to the `SearchResponseQueue`.
+    - Periodically sends hearbeat messages to the `IndexerStatusQueue` queue.
 
 <!-- *** -->
 <!-- ## Data Flow Diagram

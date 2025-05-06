@@ -4,27 +4,21 @@ import json
 import pymysql
 import time
 import os
-# import requests
+import requests
 import threading
 from collections import Counter
 from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
-import nltk
 from nltk.stem import PorterStemmer
 import re
 
 
 from whoosh.index import create_in, open_dir
 from whoosh.fields import Schema, TEXT, ID
-# from whoosh.qparser import QueryParser
-# from whoosh.query import Term
 from whoosh.qparser import MultifieldParser, OrGroup
 
-nltk.download('punkt')
-nltk.download('stopwords')
-nltk.download('punkt_tab')
 
-
+last_indexed_url = None
 stemmer = PorterStemmer()
 
 # whoosh schema 
@@ -69,14 +63,21 @@ db_config = {
 #heartbeat code
 def send_status_message():
     try:
+        global last_indexed_url
+        ip_address = requests.get("http://checkip.amazonaws.com/").text.strip()
+        
+        heartbeat_message = {
+            "overallStatus": overallStatus,
+            "runningStatus": runningStatus,
+            "ip_address": ip_address,
+            "last_indexed_url": last_indexed_url  # Include the last indexed URL
+        }
+         
         sqs.send_message(
             QueueUrl=status_queue_url,
-            MessageBody=json.dumps({
-                "overallStatus": overallStatus,  
-                "runningStatus": runningStatus  
-            })
+            MessageBody=json.dumps(heartbeat_message)
         )
-        print(f"Sent status message: overallStatus={overallStatus}, runningStatus={runningStatus}")
+        print(f"Sent status message:{heartbeat_message}")
     except Exception as e:
         print(f"Failed to send status message: {e}")
         
@@ -170,7 +171,7 @@ def store_in_rds(data, max_retries=3, retry_delay=5):
 def index_in_whoosh(data):
     try:
         processed_title = clean_text(data.get("title", ""))
-        processed_description = stem_text(clean_text(data.get("description", "")))
+        processed_description = stem_text(clean_text(" ".join(analyze_keywords(data.get("description", "")))))
         processed_keywords = clean_text(" ".join(analyze_keywords(data.get("keywords", ""))))
 
         print(f"Processed fields for URL {data['url']}:")
@@ -249,6 +250,7 @@ def stem_text(text):
 
 
 def process_message(message):
+    global last_indexed_url
     try:
         
         body = json.loads(message['Body'])
@@ -260,6 +262,7 @@ def process_message(message):
         index_in_whoosh(body)
             
         store_in_rds(body)
+        last_indexed_url = body["url"]
     except json.JSONDecodeError as e:
         print(f"Invalid JSON format: {e}")
     except ValueError as e:
@@ -390,56 +393,6 @@ def main():
 
     thread1.join()
     thread2.join()
-    
-    # global runningStatus
-    # while True:
-    #     print("Polling for messages...")
-    #     response = sqs.receive_message(
-    #         QueueUrl=queue_url,
-    #         MaxNumberOfMessages=1,
-    #         WaitTimeSeconds=5  
-    #     )
-
-    #     if 'Messages' not in response:
-    #         print("No messages in queue.")
-    #         runningStatus = 1
-    #         # continue
-
-    #     else:
-    #         for message in response['Messages']:
-    #             runningStatus = 0 
-    #             process_message(message)
-
-    #             # delete after to avoid conflicts
-    #             receipt_handle = message['ReceiptHandle']
-    #             sqs.delete_message(QueueUrl=queue_url, ReceiptHandle=receipt_handle)
-    #             print(f"Deleted message with receipt handle: {receipt_handle}")
-    #             runningStatus = 1 
-           
-    #     print("Polling for messages in SearchQueue...")    
-    #     search_response = sqs.receive_message(
-    #         QueueUrl=search_request_queue_url,
-    #         MaxNumberOfMessages=1,
-    #         WaitTimeSeconds=5  
-    #     )
-        
-
-    #     if 'Messages' not in search_response:
-    #         print("No messages in SearchQueue.")
-    #         runningStatus = 1
-    #     else:
-    #         for message in search_response['Messages']:
-    #             runningStatus = 0
-    #             process_search_request(message)
-
-    #             # delete after to avoid conflicts
-    #             receipt_handle = message['ReceiptHandle']
-    #             sqs.delete_message(QueueUrl=search_request_queue_url, ReceiptHandle=receipt_handle)
-    #             print(f"Deleted search request with receipt handle: {receipt_handle}")
-    #             runningStatus = 1 
-
-
-    #     time.sleep(2)
         
         
 
