@@ -1,0 +1,218 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Seed URL Submission</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+</head>
+<body>
+
+<div class='bold-line'></div>
+<div class='parent-container'>
+<div class='container1'>
+  <div class='window'>
+    <div class='overlay'></div>
+    <div class='content1'>
+      <div class='welcome'>Submit Seed URL</div>
+      <div class='input-fields'>
+      <input class='input-line full-width' type="text" id="url" placeholder="Seed URL" required>
+    <input class='input-line full-width' type="number" id="depth" placeholder="Crawl Depth" required></div>
+    <div><button class="ghost-round full-width" onclick="sendSeedToSQS()">Send</button></div>
+    <p id="seedResponse"></p></div></div>
+
+    <div class ="container2">
+        <div class='window'>
+            <div class='overlay'></div>
+    <div class='content2'>
+    <div class='welcome'>Submit Search Query</div>
+        
+            <div class="search-box">
+                <button class="btn-search" onclick="submitSearchAndDisplayResults()"><i class="fas fa-search" ></i></button>
+                <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required></div>
+            
+    <div id="searchResponseContainer" class="search-response-container">
+        <div class="search-results-header">Search Results</div>
+        <div id="resultsContainer" class="results-container">
+    <p id="searchResponse"></p></div>
+    <!-- <div class="card">
+        <div class="card-header">Search Results</div>
+        <div class="card-body">
+          <div id="resultsContainer" class="results-container"></div>
+        </div>
+      </div>
+    </div> -->
+    
+    </div>
+    </div>
+</div>
+     
+    
+<script>
+
+
+async function sendSeedToSQS() {
+    const url = document.getElementById('url').value;
+    const depth = document.getElementById('depth').value;
+    const resElem = document.getElementById('seedResponse');
+
+    const payload = { url, depth };
+    console.log('[Client] Preparing to send payload:', payload);
+
+    try {
+        const response = await fetch('http://54.88.141.236:5000/send', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload),
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+
+        const raw = await response.text();
+        console.log('[Client] Raw response text:', raw);
+
+        try {
+            const data = JSON.parse(raw);
+            resElem.innerText = data.message || 'Success';
+      } catch (parseError) {
+            console.error('[Client] JSON parse error:', parseError);
+            resElem.innerText = 'Invalid JSON from server: ' + parseError + '\n' + raw;
+        }
+    } catch (err) {
+        console.error('[Client] Fetch/network error:', err);
+        resElem.innerText = 'Network or CORS error: ' + err;
+    }
+}
+
+
+
+
+async function submitSearchAndDisplayResults() {
+    const keywords = document.getElementById('keywords').value;
+    const resElem = document.getElementById('searchResponse');
+
+    console.log('[Client] Preparing to send search keyword:', keywords);
+
+    try {
+        // Send 
+        const keywords = document.getElementById('keywords').value;
+        const resElem = document.getElementById('searchResponse');
+        const payload = { keywords };
+
+        try {
+            const response = await fetch('http://44.204.18.153:5000/send-search', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                mode: 'cors',
+                cache: 'no-cache'
+            });
+            const data = await response.json();
+            resElem.innerText = data.message;
+        } catch (err) {
+            resElem.innerText = 'Error: ' + err;
+        }
+
+        // fetch 
+        const resultsResponse = await fetch('http://44.204.18.153:5000/get-search-results', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+
+        const resultsData = await resultsResponse.json();
+        if (resultsData.results ) {
+            resultsData.results.forEach(result => {
+                const card = document.createElement('div');
+                card.classList.add('result-card');
+
+                const titleElem = document.createElement('h3');
+                titleElem.textContent = result.title || 'No Title';
+                card.appendChild(titleElem);
+
+                const urlElem = document.createElement('p');
+                const urlLink = document.createElement('a');
+                urlLink.href = result.url || '#';
+                urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                urlLink.target = '_blank';
+                urlElem.appendChild(urlLink);
+                card.appendChild(urlElem);
+
+                const keywordsElem = document.createElement('p');
+                keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                card.appendChild(keywordsElem);
+
+                const descriptionElem = document.createElement('p');
+                descriptionElem.textContent = result.description || 'No Description';
+                card.appendChild(descriptionElem);
+
+                resultsContainer.appendChild(card);
+            });
+        } else { const noResults = document.createElement('p');
+            noResults.classList.add('feedback');
+            noResults.textContent = resultsData.message || 'No search results available.';
+            resultsContainer.appendChild(noResults);resElem.innerText = resultsData.message || 'No results found.';
+        }
+    } catch (err) {
+        console.error('[Client] Fetch/network error:', err);
+        resElem.innerText = 'Network or CORS error: ' + err;
+        const resultsContainer = document.getElementById('resultsContainer');
+        resultsContainer.innerHTML = '<p class="feedback">Error loading results.</p>';
+    }
+}
+
+document.getElementById('keywords').addEventListener('keydown', function (event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); 
+        document.querySelector('.btn-search').click(); 
+    }
+});
+
+
+// const resultsContainer = document.getElementById('resultsContainer');
+// resultsContainer.innerHTML = ''; // Clear previous results
+
+// resultsData.results.forEach(result => {
+//     const resultDiv = document.createElement('div');
+//     resultDiv.classList.add('result-item');
+
+//     // Add title
+//     const titleElem = document.createElement('h3');
+//     titleElem.textContent = `Title: ${result.title}`;
+//     resultDiv.appendChild(titleElem);
+
+//     // Add URL
+//     const urlElem = document.createElement('p');
+//     const urlLink = document.createElement('a');
+//     urlLink.href = result.url;
+//     urlLink.textContent = `URL: ${result.url}`;
+//     urlLink.target = '_blank'; // Open in a new tab
+//     urlElem.appendChild(urlLink);
+//     resultDiv.appendChild(urlElem);
+
+//     // Add keywords
+//     const keywordsElem = document.createElement('p');
+//     keywordsElem.textContent = `Keywords: ${result.keywords}`;
+//     resultDiv.appendChild(keywordsElem);
+
+//     // Add description
+//     const descriptionElem = document.createElement('p');
+//     descriptionElem.textContent = `Description: ${result.description}`;
+//     resultDiv.appendChild(descriptionElem);
+
+//     // Append the result to the results container
+//     resultsContainer.appendChild(resultDiv);
+// });
+
+
+</script>
+
+
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1370.0.min.js"></script>
+</body>
+</html>
+
