@@ -48,8 +48,9 @@
                     <!-- <div id="searchResponseContainer" class="search-response-container"> -->
                         <div class="search-results-header">Search Results</div>
                         <div id="resultsContainer" class="results-container">
-                            <p id="searchResponse"></p>
+                            
                         </div>
+                        <p id="searchResponse"></p>
                     <!-- </div> -->
                 </div>
             </div>
@@ -264,10 +265,12 @@ async function submitSearchAndDisplayResults() {
 
     try {
         // Send 
-        
-        container2.classList.remove('expanded')
+
+        clearResultsContainer();
         searchResultsHeader.style.display = 'none';
-        // resultsContainer.innerHTML = ''; 
+        container2.classList.remove('expanded')
+        
+       
         
 
         const payload = { keywords };
@@ -294,8 +297,10 @@ async function submitSearchAndDisplayResults() {
         });
 
         const resultsData = await resultsResponse.json();
+        console.log('[Client] Search results:', resultsData);
         
         if (resultsData.results ) {
+            resElem.innerText = ' '
             searchResultsHeader.style.display = 'block';
             resultsData.results.forEach(result => {
                 const card = document.createElement('div');
@@ -347,11 +352,20 @@ async function submitSearchAndDisplayResults() {
     }
 }
 
-document.getElementById('keywords').addEventListener('keydown', function (event) {
-    if (event.key === 'Enter') {
-        event.preventDefault(); 
-        document.querySelector('.btn-search').click(); 
+function clearResultsContainer() {
+    const resultsContainer = document.getElementById('resultsContainer');
+    while (resultsContainer.firstChild) {
+        resultsContainer.removeChild(resultsContainer.firstChild);
     }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('keywords').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.querySelector('.btn-search').click();
+        }
+    });
 });
 
 
