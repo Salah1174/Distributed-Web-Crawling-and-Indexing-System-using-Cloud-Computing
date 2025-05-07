@@ -4,8 +4,13 @@ from queue_polling import poll_result_queue, poll_search_queue
 from heartbeat import start_heartbeat_thread
 from whoosh.index import create_in, open_dir
 from indexing_utils import schema
+from send_stats import start_stats_thread
+import random as rand
+import time
 
 def main():
+    rand.seed(time.time())  
+    instance_id = rand.randint(1, 1000)
     last_indexed_url = {"value": None}
     running_status = 1  
 
@@ -34,6 +39,9 @@ def main():
 
     thread1.join()
     thread2.join()
+    
+    client_backend_url = "http://:5000"  
+    start_stats_thread(client_backend_url, ix, instance_id)
 
 if __name__ == "__main__":
     main()

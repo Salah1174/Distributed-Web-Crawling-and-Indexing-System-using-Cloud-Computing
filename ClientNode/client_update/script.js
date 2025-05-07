@@ -216,75 +216,6 @@ function displayGraph() {
     logMessage("User clicked 'Display Graph'");
 }
 
-// Populate Instance Info Table
-function populateInstanceInfo() {
-    const instanceInfo = [
-        {
-            instanceId: "i-12345678",
-            cpuUsage: 30,
-            publicIp: "192.168.1.1",
-            storageUsage: 80,
-            status: "Healthy"
-        },
-        {
-            instanceId: "i-23456789",
-            cpuUsage: 60,
-            publicIp: "192.168.1.2",
-            storageUsage: 90,
-            status: "Warning"
-        }
-    ];
-
-    const output = document.getElementById("instanceInfo");
-    output.innerHTML = ""; // Clear existing rows
-
-    instanceInfo.forEach(info => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${info.instanceId}</td>
-            <td>${info.cpuUsage}%</td>
-            <td>${info.publicIp}</td>
-            <td>${info.storageUsage}%</td>
-            <td>${info.status}</td>
-        `;
-        output.appendChild(row);
-    });
-}
-
-// Populate Critical Status Table
-function populateCriticalStatus() {
-    const criticalStatus = [
-        {
-            nodeName: "Node 1",
-            cpuUsage: 95,
-            storageUsage: 99,
-            status: "Critical",
-            alert: "High CPU & Storage Usage"
-        },
-        {
-            nodeName: "Node 2",
-            cpuUsage: 80,
-            storageUsage: 60,
-            status: "Warning",
-            alert: "High CPU Usage"
-        }
-    ];
-
-    const output = document.getElementById("criticalStatus");
-    output.innerHTML = ""; // Clear existing rows
-
-    criticalStatus.forEach(status => {
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${status.nodeName}</td>
-            <td>${status.cpuUsage}%</td>
-            <td>${status.storageUsage}%</td>
-            <td>${status.status}</td>
-            <td>${status.alert}</td>
-        `;
-        output.appendChild(row);
-    });
-}
 
 
 //Dummy data graph display 
@@ -343,20 +274,48 @@ function updateStats(crawled, indexed) {
     document.getElementById('indexedCount').textContent = indexed;
 }
 
-//not sure?
-// async function fetchStats() {
-//     try {
-//         const response = await fetch('http://44.204.18.153:5000/stats', {
-//             method: 'GET',
-//             mode: 'cors',
-//             cache: 'no-cache'
-//         });
-//         const data = await response.json();
-//         updateStats(data.crawled, data.indexed);
-//     } catch (err) {
-//         console.error('[Client] Failed to fetch stats:', err);
-//     }
-// }
 
-// // peridoic call
-// setInterval(fetchStats, 5000);
+
+function clearResultsContainer() {
+    const resultsContainer = document.getElementById('resultsContainer');
+    while (resultsContainer.firstChild) {
+        resultsContainer.removeChild(resultsContainer.firstChild);
+    }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('keywords').addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            document.querySelector('.btn-search').click();
+        }
+    });
+});
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const toggleButton = document.getElementById('toggleSidebar');
+
+    toggleButton.addEventListener('click', (event) => {
+        sidebar.classList.toggle('active');
+        event.stopPropagation(); 
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+});
+
+
+function updateDateTime() {
+    const dateElement = document.querySelector('#title-container h6');
+    const now = new Date();
+    dateElement.textContent = `Date: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()}`;
+}
+setInterval(updateDateTime,1000); // kol sanya
+
+
+

@@ -85,3 +85,69 @@ def get_search_results():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
+    
+
+index_stats_data = {
+    "instanceInfo": [],
+    "indexedCount": 0
+}
+
+crawler_stats_data = {
+    "criticalStatus": [],
+    "crawledCount": 0
+}
+    
+@app.route('/indexer-stats', methods=['POST'])
+def receive_stats():
+    global index_stats_data
+    try:
+        data = request.get_json()
+        instance_info = data.get("instanceInfo")
+        indexed_count = data.get("indexedCount")
+        
+        index_stats_data["instanceInfo"] = instance_info
+        index_stats_data["indexedCount"] = indexed_count
+
+
+        print(f"Received instance info: {instance_info}")
+        print(f"Received indexed count: {indexed_count}")
+
+        return jsonify({"message": "Stats received successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/crawler-stats', methods=['POST'])
+def receive_stats():
+    global crawler_stats_data
+    try:
+        data = request.get_json()
+
+        
+        crawler_stats_data["criticalStatus"] = data.get("crawlerInfo")
+        crawler_stats_data["crawledCount"] = data.get("crawledCount")
+        print(f"Received critical status: {crawler_stats_data['criticalStatus']}")
+        print(f"Received crawled count: {crawler_stats_data['crawledCount']}")
+
+
+        return jsonify({"message": "Stats received successfully"}), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    
+    
+@app.route('/get-stats', methods=['GET'])
+def get_stats():
+    global index_stats_data
+    global crawler_stats_data
+    try:
+        
+        response_data = {
+            "instanceInfo": index_stats_data["instanceInfo"],
+            "indexedCount": index_stats_data["indexedCount"],
+            "crawlerInfo": crawler_stats_data["criticalStatus"],
+            "crawledCount": crawler_stats_data["crawledCount"]
+        }
+        return jsonify(response_data), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+

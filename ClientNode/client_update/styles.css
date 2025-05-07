@@ -548,7 +548,7 @@ h1 { text-align: center; margin-bottom: 30px; }
 .sidebar .stat {
   margin-bottom: 20px;
   font-size: 1.2em;
-  color: #555;
+  color: #fff;
 }
 
 .sidebar .stat p {
@@ -558,7 +558,7 @@ h1 { text-align: center; margin-bottom: 30px; }
 
 .sidebar .stat span {
   font-size: 1.5em;
-  color: #007bff;
+  color: #293d58;
 }
   /*  footer   */
   footer {

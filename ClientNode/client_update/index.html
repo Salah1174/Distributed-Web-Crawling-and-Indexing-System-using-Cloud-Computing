@@ -62,7 +62,7 @@
                 <h1>Nodes Monitoring</h1>
                 <span>
                     <h2><i class="fas fa-sync-alt"></i></h2>
-                    <h6 style="margin-left: 5px;">Date:06/05/2025, 06:56 AM</h6>
+                    <h6 style="margin-left: 5px;"></h6>
                 </span>
             </div>
             <h3>Nodes Status:</h3>
@@ -216,8 +216,7 @@
     </div> <!-- Close parent-container -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-
+ <script>
 
 async function sendSeedToSQS() {
     const url = document.getElementById('url').value;
@@ -358,42 +357,82 @@ async function submitSearchAndDisplayResults() {
     }
 }
 
-function clearResultsContainer() {
-    const resultsContainer = document.getElementById('resultsContainer');
-    while (resultsContainer.firstChild) {
-        resultsContainer.removeChild(resultsContainer.firstChild);
+
+async function populateInstanceInfo() {
+    try {
+        const response = await fetch('http://54.210.112.224:5000/get-stats', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+
+        const instanceInfo = data.instanceInfo || [];
+        const output = document.getElementById("instanceInfo");
+        output.innerHTML = ""; 
+
+        instanceInfo.forEach(info => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${info.instanceId}</td>
+                <td>${info.cpuUsage}%</td>
+                <td>${info.publicIp}</td>
+                <td>${info.storageUsage}%</td>
+                <td>${info.status}</td>
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch instance info:', err);
     }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-    document.getElementById('keywords').addEventListener('keydown', function (event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            document.querySelector('.btn-search').click();
-        }
-    });
-});
+async function populateCriticalStatus() {
+    try {
+        const response = await fetch('http://54.210.112.224:5000/get-stats', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
 
+        const criticalStatus = data.crawlerInfo || [];
+        const output = document.getElementById("criticalStatus");
+        output.innerHTML = ""; // Clear existing rows
 
-document.addEventListener('DOMContentLoaded', () => {
-    const sidebar = document.getElementById('sidebar');
-    const toggleButton = document.getElementById('toggleSidebar');
+        criticalStatus.forEach(status => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${status.nodeName || "Unknown"}</td>
+                <td>${status.cpuUsage || "N/A"}%</td>
+                <td>${status.storageUsage || "N/A"}%</td>
+                <td>${status.status || "N/A"}</td>
+                <td>${status.alert || "N/A"}</td>
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch critical status:', err);
+    }
+}
 
-    toggleButton.addEventListener('click', (event) => {
-        sidebar.classList.toggle('active');
-        event.stopPropagation(); 
-    });
+async function fetchStats() {
+    try {
+        const response = await fetch('http://44.204.18.153:5000/get-stats', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+        updateStats(data.crawled, data.indexed);
+    } catch (err) {
+        console.error('[Client] Failed to fetch stats:', err);
+    }
+}
 
-    document.addEventListener('click', (event) => {
-        if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
-            sidebar.classList.remove('active');
-        }
-    });
-});
+setInterval(fetchStats, 60000);
 
-
-</script>
-
+    </script>
 
 
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1370.0.min.js"></script>
