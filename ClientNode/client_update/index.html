@@ -223,7 +223,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://3.85.233.34:5000/send', {
+        const response = await fetch('http://54.210.112.224:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -273,7 +273,7 @@ async function submitSearchAndDisplayResults() {
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://3.85.233.34:5000/send-search', {
+            const response = await fetch('http://54.210.112.224:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -287,7 +287,7 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://3.85.233.34:5000/get-search-results', {
+        const resultsResponse = await fetch('http://54.210.112.224:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -308,13 +308,15 @@ async function submitSearchAndDisplayResults() {
                 const urlElem = document.createElement('p');
                 const urlLink = document.createElement('a');
                 urlLink.href = result.url || '#';
-                urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                // urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                urlLink.textContent = result.url || 'No URL';
                 urlLink.target = '_blank';
                 urlElem.appendChild(urlLink);
                 card.appendChild(urlElem);
 
                 const keywordsElem = document.createElement('p');
-                keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                // keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                keywordsElem.textContent = result.keywords ? `Keywords: ${result.keywords}` : 'No Keywords';
                 card.appendChild(keywordsElem);
 
                 const descriptionElem = document.createElement('p');
