@@ -45,13 +45,13 @@
                         </button>
                         <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required>
                     </div>
-                    <!-- <div id="searchResponseContainer" class="search-response-container"> -->
+                    
                         <div class="search-results-header">Search Results</div>
                         <div id="resultsContainer" class="results-container">
                             
                         </div>
                         <p id="searchResponse"></p>
-                    <!-- </div> -->
+                    
                 </div>
             </div>
         </div> <!-- Close container2 -->
@@ -181,7 +181,12 @@
             </table>
         </div>
 
-        <div class="container3">
+        <div class="navbar">
+            <button id="toggleSidebar" class="nav-button">☰ System Stats</button>
+        </div> 
+
+        <div id="sidebar" class="sidebar">
+        <!-- <div class="container3"> -->
             <div class="window">
                 <div class="overlay"></div>
                 <div class="content1">
@@ -196,6 +201,7 @@
                     </div>
                 </div>
             </div>
+        </div>
         
         
         <!-- Font Awesome JS CDN -->
@@ -369,40 +375,21 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 
-// const resultsContainer = document.getElementById('resultsContainer');
-// resultsContainer.innerHTML = ''; // Clear previous results
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const toggleButton = document.getElementById('toggleSidebar');
 
-// resultsData.results.forEach(result => {
-//     const resultDiv = document.createElement('div');
-//     resultDiv.classList.add('result-item');
+    toggleButton.addEventListener('click', (event) => {
+        sidebar.classList.toggle('active');
+        event.stopPropagation(); 
+    });
 
-//     // Add title
-//     const titleElem = document.createElement('h3');
-//     titleElem.textContent = Title: ${result.title};
-//     resultDiv.appendChild(titleElem);
-
-//     // Add URL
-//     const urlElem = document.createElement('p');
-//     const urlLink = document.createElement('a');
-//     urlLink.href = result.url;
-//     urlLink.textContent = URL: ${result.url};
-//     urlLink.target = '_blank'; // Open in a new tab
-//     urlElem.appendChild(urlLink);
-//     resultDiv.appendChild(urlElem);
-
-//     // Add keywords
-//     const keywordsElem = document.createElement('p');
-//     keywordsElem.textContent = Keywords: ${result.keywords};
-//     resultDiv.appendChild(keywordsElem);
-
-//     // Add description
-//     const descriptionElem = document.createElement('p');
-//     descriptionElem.textContent = Description: ${result.description};
-//     resultDiv.appendChild(descriptionElem);
-
-//     // Append the result to the results container
-//     resultsContainer.appendChild(resultDiv);
-// });
+    document.addEventListener('click', (event) => {
+        if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+});
 
 
 </script>
