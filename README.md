@@ -151,11 +151,11 @@ sudo systemctl start indexer.service
 2. Access the client interface via the public IP of the server:
 > http://<PUBLIC_IP>:5000
 3. Features available in the client interface:
-    - ** Submit Seed URL **: Enter a seed URL, restricted domains, crawl depth, and page limit to initiate crawling.
-    - ** Submit Search Query **: Enter keywords to search the indexed data.
-    - ** Monitor Nodes **:
-        - ** Instance Information **: View real-time details of nodes, including instanceId, cpuUsage, publicIp, storageUsage, and status.
-        - ** Critical Status **: Identify nodes with critical conditions, including high CPU or storage usage, and view associated alerts.
+    - **Submit Seed URL**: Enter a seed URL, restricted domains, crawl depth, and page limit to initiate crawling.
+    - **Submit Search Query**: Enter keywords to search the indexed data.
+    - **Monitor Nodes**:
+        - **Instance Information**: View real-time details of nodes, including instanceId, cpuUsage, publicIp, storageUsage, and status.
+        - **Critical Status**: Identify nodes with critical conditions, including high CPU or storage usage, and view associated alerts.
 
 **Master Node**
 1. Start the Master Node script:
