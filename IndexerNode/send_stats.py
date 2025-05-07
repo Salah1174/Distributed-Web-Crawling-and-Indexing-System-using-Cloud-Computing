@@ -1,8 +1,8 @@
 import socket
 import threading
-import psutil  
-import requests  
+import psutil   
 import time
+from aws_utils import send_sqs_message
 
 def get_instance_info(instance_id):
     try:
@@ -31,33 +31,32 @@ def get_indexed_urls_count(ix):
         return 0
     
     
-def send_stats_to_client_backend(client_backend_url, ix, instance_id):
+def send_stats_to_client_backend(stats_queue_url, ix, instance_id):
     try:
         instance_info = get_instance_info(instance_id)
         if instance_info is None:
             return
         indexed_count = get_indexed_urls_count(ix)
 
-        if instance_info is None:
-            return
+
 
         payload = {
             "instanceInfo": instance_info,
             "indexedCount": indexed_count
         }
 
-        response = requests.post(f"{client_backend_url}/stats", json=payload)
-        if response.status_code == 200:
-            print("Stats sent successfully to Client Backend.")
-        else:
-            print(f"Failed to send stats: {response.status_code}, {response.text}")
+   
+        
+        send_sqs_message(stats_queue_url, payload)
+        
+        
     except Exception as e:
         print(f"Error sending stats to Client Backend: {e}")
         
-def start_stats_thread(client_backend_url, ix, instance_id):
+def start_stats_thread(stats_queue_url, ix, instance_id):
     def send_stats_periodically():
         while True:
-            send_stats_to_client_backend(client_backend_url, ix, instance_id)
+            send_stats_to_client_backend(stats_queue_url, ix, instance_id)
             time.sleep(5)  # Send stats every 5 seconds
 
     stats_thread = threading.Thread(target=send_stats_periodically, daemon=True)

@@ -15,6 +15,9 @@ sqs = boto3.client('sqs', region_name='us-east-1')  # AWS region
 queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Client_Master_Queue'  # queue URL
 search_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/SearchQueue'
 search_response_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/SearchResponseQueue'
+indexer_stats = 'https://sqs.us-east-1.amazonaws.com/608542499503/Indexer_Stats'
+crawler_stats='https://sqs.us-east-1.amazonaws.com/608542499503/Crawler_Stats'
+
 
 
     
@@ -101,19 +104,33 @@ crawler_stats_data = {
 def receive_stats():
     global index_stats_data
     try:
-        data = request.get_json()
-        instance_info = data.get("instanceInfo")
-        indexed_count = data.get("indexedCount")
-        
-        index_stats_data["instanceInfo"] = instance_info
-        index_stats_data["indexedCount"] = indexed_count
+        while True:
+            response = sqs.receive_message(
+                QueueUrl=indexer_stats,
+                MaxNumberOfMessages=1,
+                WaitTimeSeconds=10
+            )
 
+            messages = response.get('Messages', [])
+            for message in messages:
 
-        print(f"Received instance info: {instance_info}")
-        print(f"Received indexed count: {indexed_count}")
+                body = json.loads(message['Body'])
+                # print(f"Received stats: {body}")
 
-        return jsonify({"message": "Stats received successfully"}), 200
+                instance_info = body.get("instanceInfo")
+                indexed_count = body.get("indexedCount")
+                if instance_info:
+                    index_stats_data["instanceInfo"].append(instance_info)
+                if indexed_count:
+                    index_stats_data["indexedCount"] = indexed_count
+                    
+                    
+                sqs.delete_message(
+                    QueueUrl=indexer_stats,
+                    ReceiptHandle=message['ReceiptHandle']
+                )
     except Exception as e:
+        print(f"Error receiving indexer stats: {e}")
         return jsonify({"error": str(e)}), 500
     
     
@@ -121,17 +138,34 @@ def receive_stats():
 def receive_stats():
     global crawler_stats_data
     try:
-        data = request.get_json()
+        while True:
+            
+            response = sqs.receive_message(
+                QueueUrl=crawler_stats,
+                MaxNumberOfMessages=1,
+                WaitTimeSeconds=10
+            )
 
-        
-        crawler_stats_data["criticalStatus"] = data.get("crawlerInfo")
-        crawler_stats_data["crawledCount"] = data.get("crawledCount")
-        print(f"Received critical status: {crawler_stats_data['criticalStatus']}")
-        print(f"Received crawled count: {crawler_stats_data['crawledCount']}")
+            messages = response.get('Messages', [])
+            for message in messages:
+                body = json.loads(message['Body'])
+                critical_status = body.get("criticalStatus")
+                crawled_count = body.get("crawledCount")
 
+                if critical_status:
+                    crawler_stats_data["criticalStatus"] = critical_status
+                if crawled_count:
+                    crawler_stats_data["crawledCount"] = crawled_count
 
-        return jsonify({"message": "Stats received successfully"}), 200
+                sqs.delete_message(
+                    QueueUrl=crawler_stats,
+                    ReceiptHandle=message['ReceiptHandle']
+                )
+
+            
+           
     except Exception as e:
+        print(f"Error receiving crawler stats: {e}")
         return jsonify({"error": str(e)}), 500
     
     
@@ -149,5 +183,6 @@ def get_stats():
         }
         return jsonify(response_data), 200
     except Exception as e:
+        print(f"Error fetching stats: {e}")
         return jsonify({"error": str(e)}), 500
 

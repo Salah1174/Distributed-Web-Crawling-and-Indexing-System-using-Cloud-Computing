@@ -8,6 +8,7 @@ from send_stats import start_stats_thread
 import random as rand
 import time
 
+stats_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Indexer_Stats'
 def main():
     rand.seed(time.time())  
     instance_id = rand.randint(1, 1000)
@@ -40,8 +41,8 @@ def main():
     thread1.join()
     thread2.join()
     
-    client_backend_url = "http://:5000"  
-    start_stats_thread(client_backend_url, ix, instance_id)
+     
+    start_stats_thread(stats_queue_url, ix, instance_id)
 
 if __name__ == "__main__":
     main()
