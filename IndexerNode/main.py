@@ -30,6 +30,8 @@ def main():
         running_status=running_status,
         last_indexed_url=last_indexed_url
     )
+    
+    start_stats_thread(stats_queue_url, ix, instance_id)
 
     # Start threads for polling queues
     thread1 = threading.Thread(target=poll_result_queue, args=('https://sqs.us-east-1.amazonaws.com/608542499503/ResultQueue', last_indexed_url, running_status,ix), daemon=True)
@@ -42,7 +44,7 @@ def main():
     thread2.join()
     
      
-    start_stats_thread(stats_queue_url, ix, instance_id)
+    
 
 if __name__ == "__main__":
     main()

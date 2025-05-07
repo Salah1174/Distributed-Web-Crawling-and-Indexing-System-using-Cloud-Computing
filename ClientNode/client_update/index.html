@@ -229,7 +229,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://54.210.112.224:5000/send', {
+        const response = await fetch('http://44.204.89.226:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -281,7 +281,7 @@ async function submitSearchAndDisplayResults() {
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://54.210.112.224:5000/send-search', {
+            const response = await fetch('http://44.204.89.226:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -295,7 +295,7 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://54.210.112.224:5000/get-search-results', {
+        const resultsResponse = await fetch('http://44.204.89.226:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -360,14 +360,19 @@ async function submitSearchAndDisplayResults() {
 
 async function populateInstanceInfo() {
     try {
-        const response = await fetch('http://54.210.112.224:5000/get-stats', {
+        const response = await fetch('http://44.204.89.226:5000/get-indexer-info', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
         });
         const data = await response.json();
+        console.log('[Client] Instance info:', data);
 
-        const instanceInfo = data.instanceInfo || [];
+        let instanceInfo = data.instanceInfo || [];
+        if (!Array.isArray(instanceInfo)) {
+            instanceInfo = [instanceInfo];
+        }
+
         const output = document.getElementById("instanceInfo");
         output.innerHTML = ""; 
 
@@ -389,7 +394,7 @@ async function populateInstanceInfo() {
 
 async function populateCriticalStatus() {
     try {
-        const response = await fetch('http://54.210.112.224:5000/get-stats', {
+        const response = await fetch('http://44.204.89.226:5000/get-critical-status', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -416,21 +421,28 @@ async function populateCriticalStatus() {
     }
 }
 
+function updateStats(crawled, indexed) {
+    document.getElementById('crawledCount').textContent = crawled;
+    document.getElementById('indexedCount').textContent = indexed;
+    // console.log('[Client] Updated stats:', crawled, indexed);
+}
+
 async function fetchStats() {
     try {
-        const response = await fetch('http://44.204.18.153:5000/get-stats', {
+        const response = await fetch('http://44.204.89.226:5000/get-stats', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
         });
         const data = await response.json();
-        updateStats(data.crawled, data.indexed);
+        // console.log('[Client] Stats:', data);
+        updateStats(data.crawledCount , data.indexedCount );
     } catch (err) {
         console.error('[Client] Failed to fetch stats:', err);
     }
 }
 
-setInterval(fetchStats, 60000);
+setInterval(fetchStats, 6000);
 
     </script>
 

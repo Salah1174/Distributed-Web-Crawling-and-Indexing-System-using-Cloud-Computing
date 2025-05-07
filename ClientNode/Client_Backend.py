@@ -1,4 +1,5 @@
 
+import threading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import boto3
@@ -18,7 +19,15 @@ search_response_queue_url = 'https://sqs.us-east-1.amazonaws.com/608542499503/Se
 indexer_stats = 'https://sqs.us-east-1.amazonaws.com/608542499503/Indexer_Stats'
 crawler_stats='https://sqs.us-east-1.amazonaws.com/608542499503/Crawler_Stats'
 
+index_stats_data = {
+    "instanceInfo": [],
+    "indexedCount": 0
+}
 
+crawler_stats_data = {
+    "criticalStatus": [],
+    "crawledCount": 0
+}
 
     
 @app.route('/send', methods=['POST'])
@@ -85,90 +94,67 @@ def get_search_results():
         return jsonify({'results': results}), 200
     except Exception as e:
         return jsonify({'error': str(e)}), 500
-
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
     
 
-index_stats_data = {
-    "instanceInfo": [],
-    "indexedCount": 0
-}
-
-crawler_stats_data = {
-    "criticalStatus": [],
-    "crawledCount": 0
-}
     
-@app.route('/indexer-stats', methods=['POST'])
-def receive_stats():
+
+def poll_indexer_stats():
     global index_stats_data
-    try:
-        while True:
+    while True:
+        try:
             response = sqs.receive_message(
                 QueueUrl=indexer_stats,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=10
             )
-
             messages = response.get('Messages', [])
             for message in messages:
-
                 body = json.loads(message['Body'])
-                # print(f"Received stats: {body}")
-
                 instance_info = body.get("instanceInfo")
                 indexed_count = body.get("indexedCount")
-                if instance_info:
-                    index_stats_data["instanceInfo"].append(instance_info)
-                if indexed_count:
-                    index_stats_data["indexedCount"] = indexed_count
-                    
-                    
+                
+
+                index_stats_data = {
+                    "instanceInfo": instance_info if instance_info else [],
+                    "indexedCount": indexed_count if indexed_count else 0
+                }
+                
+
                 sqs.delete_message(
                     QueueUrl=indexer_stats,
                     ReceiptHandle=message['ReceiptHandle']
                 )
-    except Exception as e:
-        print(f"Error receiving indexer stats: {e}")
-        return jsonify({"error": str(e)}), 500
-    
-    
-@app.route('/crawler-stats', methods=['POST'])
-def receive_stats():
+        except Exception as e:
+            print(f"Error polling indexer stats: {e}")
+
+def poll_crawler_stats():
     global crawler_stats_data
-    try:
-        while True:
-            
+    while True:
+        try:
             response = sqs.receive_message(
                 QueueUrl=crawler_stats,
                 MaxNumberOfMessages=1,
                 WaitTimeSeconds=10
             )
-
             messages = response.get('Messages', [])
             for message in messages:
                 body = json.loads(message['Body'])
                 critical_status = body.get("criticalStatus")
                 crawled_count = body.get("crawledCount")
+                
 
-                if critical_status:
-                    crawler_stats_data["criticalStatus"] = critical_status
-                if crawled_count:
-                    crawler_stats_data["crawledCount"] = crawled_count
+                crawler_stats_data = {
+                    "criticalStatus": critical_status if critical_status else [],
+                    "crawledCount": crawled_count if crawled_count else 0
+                }
 
                 sqs.delete_message(
                     QueueUrl=crawler_stats,
                     ReceiptHandle=message['ReceiptHandle']
                 )
+        except Exception as e:
+            print(f"Error polling crawler stats: {e}")
 
-            
-           
-    except Exception as e:
-        print(f"Error receiving crawler stats: {e}")
-        return jsonify({"error": str(e)}), 500
-    
-    
 @app.route('/get-stats', methods=['GET'])
 def get_stats():
     global index_stats_data
@@ -176,13 +162,55 @@ def get_stats():
     try:
         
         response_data = {
-            "instanceInfo": index_stats_data["instanceInfo"],
+
             "indexedCount": index_stats_data["indexedCount"],
-            "crawlerInfo": crawler_stats_data["criticalStatus"],
             "crawledCount": crawler_stats_data["crawledCount"]
         }
+        print(f"Stats sent successfully to Client : {response_data}")
         return jsonify(response_data), 200
+        
     except Exception as e:
         print(f"Error fetching stats: {e}")
         return jsonify({"error": str(e)}), 500
+    
+@app.route('/get-indexer-info', methods=['GET'])
+def get_indexer_info():
+    global index_stats_data
+    try:
+        
+        response_data = {
+
+            "instanceInfo": index_stats_data["instanceInfo"],
+        }
+        print(f"Stats sent successfully to Client : {response_data}")
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        print(f"Error fetching stats: {e}")
+        return jsonify({"error": str(e)}), 500
+    
+@app.route('/get-critical-status', methods=['GET'])
+def get_crawler_status():
+    global index_stats_data
+    global crawler_stats_data
+    try:
+        
+        response_data = {
+
+            "crawlerInfo": crawler_stats_data["criticalStatus"],
+        }
+        print(f"Stats sent successfully to Client Backend: {response_data}")
+        return jsonify(response_data), 200
+        
+    except Exception as e:
+        print(f"Error fetching stats: {e}")
+        return jsonify({"error": str(e)}), 500
+
+if __name__ == '__main__':
+    
+    threading.Thread(target=poll_indexer_stats, daemon=True).start()
+    threading.Thread(target=poll_crawler_stats, daemon=True).start()
+
+    app.run(host='0.0.0.0', port=5000, debug=True)
+    
 
