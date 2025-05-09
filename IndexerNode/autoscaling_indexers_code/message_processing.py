@@ -38,53 +38,19 @@ def process_search_request(message, ix, search_response_queue_url):
         keywords = body['keywords'].lower()
         request_id = body['request_id']
 
-        with ix.searcher() as searcher:
-            # query = QueryParser("keywords", ix.schema).parse(f'"{keywords}"')
-            parser = MultifieldParser(["title^3", "description", "keywords^2"],  # boost "title" field
-                                        ix.schema,
-                                        group=OrGroup
-                                     )
-            # query = Term("keywords", keywords)
-            query = parser.parse(keywords)
-            print(f"Search query: {query}")
-            results = searcher.search(query, limit=10)  # limit to top 10 results
-
-            urls = [result["url"] for result in results]
-            print(f"Search results for keywords '{keywords}': {urls}")
-            
-            # for result in results:
-            #     print(f"URL: {result['url']},Score: {result.score} Title: {result['title']}, Description: {result['description']}, Keywords: {result['keywords']}")
-
-        # Fetch full data from RDS
-        if urls:
-            placeholders = ', '.join(['%s'] * len(urls))
-            sql = f"""
-            SELECT url, title, description, keywords
-            FROM indexed_data
-            WHERE url IN ({placeholders})
-            """
-            print(f"executing SQL: {sql} with params: {urls}")
-            whoosh_results = execute_query(sql, urls, fetch_results=True)
-        else:
-            whoosh_results = []
-
         sql = """
         SELECT url, title, description, keywords
         FROM indexed_data
         WHERE title LIKE %s OR description LIKE %s OR keywords LIKE %s
         """
         params = (f"%{keywords}%", f"%{keywords}%", f"%{keywords}%")
-        print(f"Executing SQL for additional results: {sql} with params: {params}")
-        additional_sql_results = execute_query(sql, params, fetch_results=True)
+        results = execute_query(sql, params, fetch_results=True)
 
-        all_results = {result['url']: result for result in whoosh_results}
-        for result in additional_sql_results:
-            if result['url'] not in all_results:
-                all_results[result['url']] = result
-         
+
+
         response = {
             'request_id': request_id,
-            'results': list(all_results.values())
+            'results': results
         }
         send_sqs_message(search_response_queue_url, response)
         print(f"Search results sent for request ID: {request_id}")

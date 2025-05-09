@@ -33,6 +33,7 @@ def get_indexed_urls_count():
         print(f"Error fetching indexed URLs count: {e}")
         return 0
     
+    
 def send_stats_to_client_backend(stats_queue_url, instance_id):
     try:
         instance_info = get_instance_info(instance_id)
