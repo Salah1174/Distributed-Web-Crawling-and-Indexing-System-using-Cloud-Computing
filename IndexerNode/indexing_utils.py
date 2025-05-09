@@ -24,9 +24,9 @@ schema = Schema(
 
 def index_in_whoosh(data,ix):
     try:
-        processed_title = clean_text(data.get("title", ""))
+        processed_title = data.get("title", "")
         processed_description = stem_text(clean_text(" ".join(analyze_keywords(data.get("description", "")))))
-        processed_keywords = clean_text(" ".join(analyze_keywords(data.get("keywords", ""))))
+        processed_keywords = clean_text(data.get("keywords", ""))
 
         print(f"Processed fields for URL {data['url']}:")
         print(f"Title: {processed_title}")

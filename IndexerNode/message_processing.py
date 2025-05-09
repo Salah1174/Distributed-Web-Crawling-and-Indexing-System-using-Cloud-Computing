@@ -64,14 +64,27 @@ def process_search_request(message, ix, search_response_queue_url):
             WHERE url IN ({placeholders})
             """
             print(f"executing SQL: {sql} with params: {urls}")
-            full_results = execute_query(sql, urls, fetch_results=True)
+            whoosh_results = execute_query(sql, urls, fetch_results=True)
         else:
-            full_results = []
+            whoosh_results = []
 
+        sql = """
+        SELECT url, title, description, keywords
+        FROM indexed_data
+        WHERE title LIKE %s OR description LIKE %s OR keywords LIKE %s
+        """
+        params = (f"%{keywords}%", f"%{keywords}%", f"%{keywords}%")
+        print(f"Executing SQL for additional results: {sql} with params: {params}")
+        additional_sql_results = execute_query(sql, params, fetch_results=True)
 
+        all_results = {result['url']: result for result in whoosh_results}
+        for result in additional_sql_results:
+            if result['url'] not in all_results:
+                all_results[result['url']] = result
+         
         response = {
             'request_id': request_id,
-            'results': full_results
+            'results': list(all_results.values())
         }
         send_sqs_message(search_response_queue_url, response)
         print(f"Search results sent for request ID: {request_id}")
