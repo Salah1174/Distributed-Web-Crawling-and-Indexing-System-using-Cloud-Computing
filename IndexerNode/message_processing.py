@@ -19,6 +19,7 @@ def process_message(message , last_indexed_url,ix):
         index_in_whoosh(body, ix)
             
         store_in_rds(body)
+        
         last_indexed_url["value"] = body["url"]
     except json.JSONDecodeError as e:
         print(f"Invalid JSON format: {e}")
@@ -44,10 +45,10 @@ def process_search_request(message, ix, search_response_queue_url):
                                         ix.schema,
                                         group=OrGroup
                                      )
-            # query = Term("keywords", keywords)
+            
             query = parser.parse(keywords)
             print(f"Search query: {query}")
-            results = searcher.search(query, limit=10)  # limit to top 10 results
+            results = searcher.search(query, limit=100)  # limit to top 20 results
 
             urls = [result["url"] for result in results]
             print(f"Search results for keywords '{keywords}': {urls}")

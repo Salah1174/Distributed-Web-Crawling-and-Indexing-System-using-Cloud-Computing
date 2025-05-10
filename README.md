@@ -1,11 +1,26 @@
 # Distributed-Web-Crawling-and-Indexing-System-using-Cloud-Computing
 ## CSE354 - Distributed Computing Course Project
 ## Team Members
-> - Mohamed Salah
-> - Salma Hisham
-> - Youssef Tamer
-> - Salma Youssef
+> - [Mohamed Salah](https://github.com/Salah1174)
+> - [Salma Hisham](https://github.com/salma-h-wagdy)
+> - [Youssef Tamer](https://github.com/JoeCode11)
+> - [Salma Youssef](https://github.com/ssalma2002)
 
+-------------
+## Table of Contents
+
+- [Overview](#overview)
+- [System Architecture](#system-architecture)
+- [Key Features](#key-features)
+- [Steps to Use](#steps-to-use)
+  - [Prerequisites](#1-prerequisites)
+  - [Setting Up AWS Resources](#2-setting-up-aws-resources)
+  - [Running the System](#3-running-the-system)
+- [Autoscaling](#autoscaling)
+- [Testing and Debugging](#testing-and-debugging)
+  - [End-to-End Testing](#end-to-end-testing)
+  - [Debugging Tips](#debugging-tips)
+- [Data Flow Overview](#data-flow-overview)
 -----
 
 ## Overview
