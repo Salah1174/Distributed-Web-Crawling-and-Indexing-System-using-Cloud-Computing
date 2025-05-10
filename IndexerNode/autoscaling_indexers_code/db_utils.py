@@ -75,7 +75,7 @@ def store_in_rds(data, max_retries=3, retry_delay=5):
             break
             
         except Exception as e:
-            print(f"Failed to store data in rds: {e}")
+            print(f"Failed to index data in Whoosh: {e}")
             retries += 1
            
             if retries < max_retries:

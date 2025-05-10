@@ -1,10 +1,26 @@
 # Distributed-Web-Crawling-and-Indexing-System-using-Cloud-Computing
+## CSE354 - Distributed Computing Course Project
 ## Team Members
-> - Mohamed Salah
-> - Salma Hisham
-> - Youssef Tamer
-> - Salma Youssef
+> - [Mohamed Salah](https://github.com/Salah1174)
+> - [Salma Hisham](https://github.com/salma-h-wagdy)
+> - [Youssef Tamer](https://github.com/JoeCode11)
+> - [Salma Youssef](https://github.com/ssalma2002)
 
+-------------
+## Table of Contents
+
+- [Overview](#overview)
+- [System Architecture](#system-architecture)
+- [Key Features](#key-features)
+- [Steps to Use](#steps-to-use)
+  - [Prerequisites](#1-prerequisites)
+  - [Setting Up AWS Resources](#2-setting-up-aws-resources)
+  - [Running the System](#3-running-the-system)
+- [Autoscaling](#autoscaling)
+- [Testing and Debugging](#testing-and-debugging)
+  - [End-to-End Testing](#end-to-end-testing)
+  - [Debugging Tips](#debugging-tips)
+- [Data Flow Overview](#data-flow-overview)
 -----
 
 ## Overview
@@ -17,9 +33,12 @@ This project implements a distributed web crawling and indexing system using clo
 The system consists of the following components:
 
 1. Client Node: 
-    - Sends seed URLs and search queries to the system via a Flask-based interface.
+   - Provides a Flask-based interface for submitting seed URLs and search queries.
+    - Monitors the status of nodes, including:
+        - **Instance Information**: Displays details such as `instanceId`, `cpuUsage`, `publicIp`, `storageUsage`, and `status` for each node.
+        - **Critical Status**: Highlights nodes with critical conditions, including `nodeName`, `cpuUsage`, `storageUsage`, `status`, and any associated alerts.
     - Communicates with the Master Node through the `Client_Master_Queue`.
-    - Displays nodes status for monitoring.
+    - Displays search results retrieved from the `SearchResponseQueue`.
 2. Master Node:
     - Manages the distribution of crawling tasks to Crawler Nodes.
     - Sends tasks to the queue `TaskQueue` for Crawler Nodes to process.
@@ -65,7 +84,7 @@ pip install boto3 scrapy
 ```
 3. Indexer nodes
 ```bash
-pip install boto3 pymysql scrapy nltk whoosh
+pip install boto3 pymysql scrapy nltk whoosh psutil
 python3 -m nltk.downloader punkt punkt_tab stopwords
 ```
 
@@ -147,7 +166,12 @@ sudo systemctl start indexer.service
 ```
 2. Access the client interface via the public IP of the server:
 > http://<PUBLIC_IP>:5000
-3. Submit a seed URL and depth or a search query.
+3. Features available in the client interface:
+    - **Submit Seed URL**: Enter a seed URL, restricted domains, crawl depth, and page limit to initiate crawling.
+    - **Submit Search Query**: Enter keywords to search the indexed data.
+    - **Monitor Nodes**:
+        - **Instance Information**: View real-time details of nodes, including instanceId, cpuUsage, publicIp, storageUsage, and status.
+        - **Critical Status**: Identify nodes with critical conditions, including high CPU or storage usage, and view associated alerts.
 
 **Master Node**
 1. Start the Master Node script:
@@ -217,6 +241,9 @@ Environment="RDS_PASSWORD=<your_rds_password>"
 2. Verify that the URL is processed by the Master Node and crawled by the Crawler Nodes.
 3. Check that the crawled data is stored in S3 and indexed in RDS.
 4. Submit a search query and verify that results are returned from the SearchResponseQueue.
+5. **Monitor Nodes**:
+    - Verify that the **Instance Information** table displays the correct details for each node.
+    - Check the **Critical Status** table for any nodes with high CPU or storage usage and ensure alerts are displayed correctly.
 
 ### Debugging Tips
 - Use AWS CloudWatch to monitor SQS queues and RDS performance.

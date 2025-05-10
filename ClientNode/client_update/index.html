@@ -4,7 +4,6 @@
     <title>Seed URL Submission</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 </head>
 <body>
@@ -46,12 +45,13 @@
                         </button>
                         <input class='input-search' type="text" id="keywords" placeholder="Search Keywords" required>
                     </div>
-                    <div id="searchResponseContainer" class="search-response-container">
+                    
                         <div class="search-results-header">Search Results</div>
                         <div id="resultsContainer" class="results-container">
-                            <p id="searchResponse"></p>
+                            
                         </div>
-                    </div>
+                        <p id="searchResponse"></p>
+                    
                 </div>
             </div>
         </div> <!-- Close container2 -->
@@ -197,6 +197,7 @@
                 </tbody>
             </table>
         </div>
+
         <div class="navbar">
             <button id="toggleSidebar" class="nav-button">☰ System Stats</button>
         </div> 
@@ -218,7 +219,8 @@
                 </div>
             </div>
         </div>
-
+        
+        
         <!-- Font Awesome JS CDN -->
         <script src=
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"
@@ -231,9 +233,8 @@
     </div> <!-- Close parent-container -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-<script>
-
-
+ <script>
+setInterval(fetchStats, 6000);
 async function sendSeedToSQS() {
     const url = document.getElementById('url').value;
     const depth = document.getElementById('depth').value;
@@ -277,13 +278,23 @@ async function sendSeedToSQS() {
 async function submitSearchAndDisplayResults() {
     const keywords = document.getElementById('keywords').value;
     const resElem = document.getElementById('searchResponse');
+    const resultsContainer = document.getElementById('resultsContainer');
+    // const searchResponseContainer = document.getElementById('searchResponseContainer');
+    const searchResultsHeader = document.querySelector('.search-results-header');
+    const container2 = document.querySelector('.container2');
 
     console.log('[Client] Preparing to send search keyword:', keywords);
 
     try {
         // Send 
-        const keywords = document.getElementById('keywords').value;
-        const resElem = document.getElementById('searchResponse');
+
+        clearResultsContainer();
+        searchResultsHeader.style.display = 'none';
+        container2.classList.remove('expanded')
+        
+       
+        
+
         const payload = { keywords };
 
         try {
@@ -308,7 +319,11 @@ async function submitSearchAndDisplayResults() {
         });
 
         const resultsData = await resultsResponse.json();
+        console.log('[Client] Search results:', resultsData);
+        
         if (resultsData.results ) {
+            resElem.innerText = ' '
+            searchResultsHeader.style.display = 'block';
             resultsData.results.forEach(result => {
                 const card = document.createElement('div');
                 card.classList.add('result-card');
@@ -320,13 +335,15 @@ async function submitSearchAndDisplayResults() {
                 const urlElem = document.createElement('p');
                 const urlLink = document.createElement('a');
                 urlLink.href = result.url || '#';
-                urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                // urlLink.textContent = result.url ? URL: '${result.url} : \'No URL\';'
+                urlLink.textContent = result.url || 'No URL';
                 urlLink.target = '_blank';
                 urlElem.appendChild(urlLink);
                 card.appendChild(urlElem);
 
                 const keywordsElem = document.createElement('p');
-                keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                // keywordsElem.textContent = 'result.keywords ? Keywords: ${result.keywords} : \'No Keywords\';'
+                keywordsElem.textContent = result.keywords ? `Keywords: ${result.keywords}` : 'No Keywords';
                 card.appendChild(keywordsElem);
 
                 const descriptionElem = document.createElement('p');
@@ -335,6 +352,15 @@ async function submitSearchAndDisplayResults() {
 
                 resultsContainer.appendChild(card);
             });
+
+            if (!container2.contains(resultsContainer)) {
+            container2.appendChild(resultsContainer);
+            }
+            
+            container2.classList.add('expanded');
+       
+            
+            
         } else { const noResults = document.createElement('p');
             noResults.classList.add('feedback');
             noResults.textContent = resultsData.message || 'No search results available.';
@@ -355,7 +381,68 @@ document.getElementById('keywords').addEventListener('keydown', function (event)
     }
 });
 
+async function populateInstanceInfo() {
+    try {
+        const response = await fetch('http://3.83.38.79:5000/get-indexer-info', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+        console.log('[Client] Instance info:', data);
 
+        let instanceInfo = data.instanceInfo || [];
+        if (!Array.isArray(instanceInfo)) {
+            instanceInfo = [instanceInfo];
+        }
+
+        const output = document.getElementById("instanceInfo");
+        output.innerHTML = ""; 
+
+        instanceInfo.forEach(info => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${info.instanceId}</td>
+                <td>${info.cpuUsage}%</td>
+                <td>${info.publicIp}</td>
+                <td>${info.storageUsage}%</td>
+                <td>${info.status}</td>
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch instance info:', err);
+    }
+}
+
+// async function populateCriticalStatus() {
+//     try {
+//         const response = await fetch('http://3.83.38.79:5000/get-critical-status', {
+//             method: 'GET',
+//             mode: 'cors',
+//             cache: 'no-cache'
+//         });
+//         const data = await response.json();
+
+//         const criticalStatus = data.crawlerInfo || [];
+//         const output = document.getElementById("criticalStatus");
+//         output.innerHTML = ""; // Clear existing rows
+
+//         criticalStatus.forEach(status => {
+//             const row = document.createElement("tr");
+//             row.innerHTML = `
+//                 <td>${status.nodeName || "Unknown"}</td>
+//                 <td>${status.cpuUsage || "N/A"}%</td>
+//                 <td>${status.storageUsage || "N/A"}%</td>
+//                 <td>${status.status || "N/A"}</td>
+//                 <td>${status.alert || "N/A"}</td>
+//             `;
+//             output.appendChild(row);
+//         });
+//     } catch (err) {
+//         console.error('[Client] Failed to fetch critical status:', err);
+//     }
+// }
 
 function updateStats(crawled, indexed) {
     document.getElementById('crawledCount').textContent = crawled;
@@ -365,7 +452,7 @@ function updateStats(crawled, indexed) {
 
 async function fetchStats() {
     try {
-        const response = await fetch('http://3.86.162.149:5000/get-stats', {
+        const response = await fetch('http://3.83.38.79:5000/get-stats', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -378,53 +465,10 @@ async function fetchStats() {
     }
 }
 
-// const resultsContainer = document.getElementById('resultsContainer');
-// resultsContainer.innerHTML = ''; // Clear previous results
-
-// resultsData.results.forEach(result => {
-//     const resultDiv = document.createElement('div');
-//     resultDiv.classList.add('result-item');
-
-//     // Add title
-//     const titleElem = document.createElement('h3');
-//     titleElem.textContent = Title: ${result.title};
-//     resultDiv.appendChild(titleElem);
-
-//     // Add URL
-//     const urlElem = document.createElement('p');
-//     const urlLink = document.createElement('a');
-//     urlLink.href = result.url;
-//     urlLink.textContent = URL: ${result.url};
-//     urlLink.target = '_blank'; // Open in a new tab
-//     urlElem.appendChild(urlLink);
-//     resultDiv.appendChild(urlElem);
-
-//     // Add keywords
-//     const keywordsElem = document.createElement('p');
-//     keywordsElem.textContent = Keywords: ${result.keywords};
-//     resultDiv.appendChild(keywordsElem);
-
-//     // Add description
-//     const descriptionElem = document.createElement('p');
-//     descriptionElem.textContent = Description: ${result.description};
-//     resultDiv.appendChild(descriptionElem);
-
-//     // Append the result to the results container
-//     resultsContainer.appendChild(resultDiv);
-// });
-
-
-/* Testing retreiving the crawler status */
-// const API = 'http://3.83.38.79:5001';
-
-// fetch(`${API}/crawler-status`)
-//   .then(r => r.json())
-//   .then(data => console.log(data));
 
 
 
-</script>
-
+    </script>
 
 
     <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1370.0.min.js"></script>
