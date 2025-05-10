@@ -415,39 +415,121 @@ async function populateInstanceInfo() {
     }
 }
 
-// async function populateCriticalStatus() {
-//     try {
-//         const response = await fetch('http://3.83.38.79:5000/get-critical-status', {
-//             method: 'GET',
-//             mode: 'cors',
-//             cache: 'no-cache'
-//         });
-//         const data = await response.json();
+async function populateCriticalStatus() {
+    try {
+        const response = await fetch('http://3.83.38.79:5000/get-critical-status', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
 
-//         const criticalStatus = data.crawlerInfo || [];
-//         const output = document.getElementById("criticalStatus");
-//         output.innerHTML = ""; // Clear existing rows
+        const criticalStatus = data.crawlerInfo || [];
+        const output = document.getElementById("criticalStatus");
+        output.innerHTML = ""; // Clear existing rows
 
-//         criticalStatus.forEach(status => {
-//             const row = document.createElement("tr");
-//             row.innerHTML = `
-//                 <td>${status.nodeName || "Unknown"}</td>
-//                 <td>${status.cpuUsage || "N/A"}%</td>
-//                 <td>${status.storageUsage || "N/A"}%</td>
-//                 <td>${status.status || "N/A"}</td>
-//                 <td>${status.alert || "N/A"}</td>
-//             `;
-//             output.appendChild(row);
-//         });
-//     } catch (err) {
-//         console.error('[Client] Failed to fetch critical status:', err);
-//     }
-// }
+        criticalStatus.forEach(status => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${status.nodeName || "Unknown"}</td>
+                <td>${status.cpuUsage || "N/A"}%</td>
+                <td>${status.storageUsage || "N/A"}%</td>
+                <td>${status.status || "N/A"}</td>
+                <td>${status.alert || "N/A"}</td>
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch critical status:', err);
+    }
+}
 
 function updateStats(crawled, indexed) {
     document.getElementById('crawledCount').textContent = crawled;
     document.getElementById('indexedCount').textContent = indexed;
     // console.log('[Client] Updated stats:', crawled, indexed);
+}
+
+async function populateCriticalStatusIndx() {
+
+
+
+    try {
+
+
+        const response = await fetch('http://54.152.115.46:5000/get-critical-status', {
+
+
+            method: 'GET',
+
+
+            mode: 'cors',
+
+
+            cache: 'no-cache'
+
+
+        });
+
+
+        const data = await response.json();
+
+
+
+
+
+        const criticalStatus = data.crawlerInfo || [];
+
+
+        const output = document.getElementById("criticalStatus");
+
+
+        output.innerHTML = ""; // Clear existing rows
+
+
+
+
+
+        criticalStatus.forEach(status => {
+
+
+            const row = document.createElement("tr");
+
+
+            row.innerHTML = `
+
+
+                <td>${status.nodeName || "Unknown"}</td>
+
+
+                <td>${status.cpuUsage || "N/A"}%</td>
+
+
+                <td>${status.storageUsage || "N/A"}%</td>
+
+
+                <td>${status.status || "N/A"}</td>
+
+
+                <td>${status.alert || "N/A"}</td>
+
+
+            `;
+
+
+            output.appendChild(row);
+
+
+        });
+
+
+    } catch (err) {
+
+
+        console.error('[Client] Failed to fetch critical status:', err);
+
+
+    }
 }
 
 async function fetchStats() {

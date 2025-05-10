@@ -236,7 +236,7 @@ function checkInstanceInfoIndx() {
 
     // Show table1 (Instance Info)
     document.getElementById("table1").classList.remove("hidden");
-    populateInstanceInfoIndx(); // You can populate this with data dynamically
+    populateInstanceInfo(); // You can populate this with data dynamically
     logMessage("User clicked 'Check Instance Info'");
 }
 
@@ -501,5 +501,273 @@ function updateDateTime() {
 }
 setInterval(updateDateTime,1000); // kol sanya
 
+const API = 'http://3.86.162.149:5001';  // Client IP
+let crawlers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
+let selectedIps = {};  // Store selected IPs for each dropdown
 
+// Map array index → human label
+const labels = ['Main Crawler', 'Crawler#1', 'Crawler#2'];
+
+// Fetch on icon click
+document.querySelector('.refresh-icon')
+  .addEventListener('click', fetchAndBuild);
+
+// Fetch + build dropdown + light LED
+async function fetchAndBuild() {
+  try {
+    const res  = await fetch(`${API}/crawler-status`);
+    const data = await res.json(); // Expect an array
+    console.log(data);
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('No crawlers returned');
+      return;
+    }
+
+    crawlers = data;
+    buildDropdowns(); // Build dropdowns for each crawler
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+}
+
+// Build dropdowns for each crawler
+function buildDropdowns() {
+  const container = document.querySelector('.crawler-container');
+  container.innerHTML = '';  // Clear previous crawlers
+  
+  crawlers.forEach((crawler, idx) => {
+    // Create individual dropdown and LED elements for each crawler
+    const crawlerDiv = document.createElement('div');
+    crawlerDiv.classList.add('custom-dropdown');
+
+    const dropdownLabel = document.createElement('label');
+    dropdownLabel.textContent = `Crawler Picker ${idx + 1}`;
+    dropdownLabel.classList.add('dropdown-label');
+
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.classList.add('dropdown-container');
+
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.classList.add('dropdown-btn');
+    dropdownBtn.textContent = 'Select Crawler';
+    dropdownBtn.disabled = true;  // Make button unclickable
+
+    const ledEl = document.createElement('div');
+    ledEl.classList.add('led');
+
+    const dropdownOptions = document.createElement('div');
+    dropdownOptions.classList.add('dropdown-options');
+
+    // Append elements to the dropdown container
+    dropdownContainer.appendChild(dropdownBtn);
+    dropdownContainer.appendChild(ledEl);
+    dropdownContainer.appendChild(dropdownOptions);
+
+    // Append everything to the main crawler div
+    crawlerDiv.appendChild(dropdownLabel);
+    crawlerDiv.appendChild(dropdownContainer);
+
+    // Append the crawler div to the main container
+    container.appendChild(crawlerDiv);
+
+    // Setup dropdown functionality for this crawler
+    setupDropdown(crawler, dropdownBtn, dropdownOptions, ledEl, idx);
+  });
+}
+
+// Set up the dropdown for each individual crawler
+function setupDropdown(crawler, dropdownBtn, dropdownOptions, ledEl, idx) {
+  // Build the options based on the crawler's status
+  dropdownOptions.innerHTML = '';
+  const option = document.createElement('div');
+  option.classList.add('option');
+  option.dataset.ip = crawler.ip_address;
+  option.textContent = labels[idx] || crawler.ip_address;
+
+  option.addEventListener('click', () => {
+    selectedIps[crawler.ip_address] = crawler.ip_address;
+    dropdownBtn.textContent = option.textContent;
+    dropdownOptions.classList.remove('show');
+    lightLEDFor(crawler, ledEl);
+  });
+
+  dropdownOptions.appendChild(option);
+
+  // Update button text on rebuild
+  dropdownBtn.textContent = labels[idx] || crawler.ip_address;
+
+  // Toggle dropdown visibility
+  dropdownBtn.addEventListener('click', (e) => {
+    e.preventDefault();  // Prevent default action (click)
+    dropdownOptions.classList.toggle('show');
+  });
+
+  // Light LED based on crawler status
+  lightLEDFor(crawler, ledEl);
+
+
+// If red, enable button and add delete behavior
+  if (crawler.overallStatus === 0) {
+    dropdownBtn.disabled = false;
+    dropdownBtn.addEventListener('click', () => {
+      dropdownBtn.closest('.custom-dropdown').remove();
+    });
+  }
+}
+
+// LED coloring helper
+function lightLEDFor(crawler, ledEl) {
+  if (!crawler || !ledEl) return;
+
+  // your three-state logic for LED color:
+  if (crawler.overallStatus === 0) {
+    ledEl.style.backgroundColor = 'red';
+  } else if (crawler.runningStatus === 0) {
+    ledEl.style.backgroundColor = 'yellow';
+  } else {
+    ledEl.style.backgroundColor = 'green';
+  }
+}
+
+
+
+
+/* Same for Indexer */
+
+// Feel free to do this differently, whatever best suits your implementation for indexer stats  
+
+
+let indexers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
+let selectedIndxIps = {};  // Store selected IPs for each dropdown
+
+// Map array index → human label
+const indexerLabels = ['Indexer#1', 'Indexer#2', 'Indexer#3'];
+
+// Fetch on icon click
+document.querySelector('.refresh-icon')
+  .addEventListener('click', fetchAndBuildIndx);
+
+// Fetch + build dropdown + light LED
+async function fetchAndBuildIndx() {
+  try {
+    const res  = await fetch(`${API}/crawler-status`); //change the fetch code. Ana msh 3aref enty 3amlah ezay fa saybo
+    const data = await res.json(); // Expect an array
+    console.log(data);
+    
+    if (!Array.isArray(data) || data.length === 0) {
+      console.warn('No indexers returned');
+      return;
+    }
+
+    indexers = data;
+    buildDropdownsIndx(); // Build dropdowns for each crawler
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+}
+
+// Build dropdowns for each crawler
+function buildDropdownsIndx() {
+  const container = document.querySelector('.indexer-container');
+  container.innerHTML = '';  // Clear previous indexers
+  
+  indexers.forEach((indexer, idx) => {
+    // Create individual dropdown and LED elements for each crawler
+    const indexerDiv = document.createElement('div');
+    indexerDiv.classList.add('custom-dropdown');
+
+    const dropdownLabel = document.createElement('label');
+    dropdownLabel.textContent = `Indexer Picker ${idx + 1}`;
+    dropdownLabel.classList.add('dropdown-label');
+
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.classList.add('dropdown-container');
+
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.classList.add('dropdown-btn');
+    dropdownBtn.textContent = 'Select indexer';
+    dropdownBtn.disabled = true;  // Make button unclickable
+
+    const ledEl = document.createElement('div');
+    ledEl.classList.add('led');
+
+    const dropdownOptions = document.createElement('div');
+    dropdownOptions.classList.add('dropdown-options');
+
+    // Append elements to the dropdown container
+    dropdownContainer.appendChild(dropdownBtn);
+    dropdownContainer.appendChild(ledEl);
+    dropdownContainer.appendChild(dropdownOptions);
+
+    // Append everything to the main crawler div
+    indexerDiv.appendChild(dropdownLabel);
+    indexerDiv.appendChild(dropdownContainer);
+
+    // Append the crawler div to the main container
+    container.appendChild(indexerDiv);
+
+    // Setup dropdown functionality for this crawler
+    setupDropdownIndx(indexer, dropdownBtn, dropdownOptions, ledEl, idx);
+  });
+}
+
+// Set up the dropdown for each individual crawler
+function setupDropdownIndx(indexer, dropdownBtn, dropdownOptions, ledEl, idx) {
+  // Build the options based on the crawler's status
+  dropdownOptions.innerHTML = '';
+  const option = document.createElement('div');
+  option.classList.add('option');
+  option.dataset.ip = indexer.ip_address;
+  option.textContent = indexerLabels[idx] || indexer.ip_address;
+
+  option.addEventListener('click', () => {
+    selectedIndxIps[indexer.ip_address] = indexer.ip_address;
+    dropdownBtn.textContent = option.textContent;
+    dropdownOptions.classList.remove('show');
+    lightLEDForIndx(indexer, ledEl);
+  });
+
+  dropdownOptions.appendChild(option);
+
+  // Update button text on rebuild
+  dropdownBtn.textContent = indexerLabels[idx] || indexer.ip_address;
+
+  // Toggle dropdown visibility
+  dropdownBtn.addEventListener('click', (e) => {
+    e.preventDefault();  // Prevent default action (click)
+    dropdownOptions.classList.toggle('show');
+  });
+
+  // Light LED based on crawler status
+  lightLEDForIndx(indexer, ledEl);
+
+
+// If red, enable button and add delete behavior
+  if (indexer.overallStatus === 0) {
+    dropdownBtn.disabled = false;
+    dropdownBtn.addEventListener('click', () => {
+      dropdownBtn.closest('.custom-dropdown').remove();
+    });
+  }
+}
+
+// LED coloring helper
+function lightLEDForIndx(indexer, ledEl) {
+  if (!indexer || !ledEl) return;
+
+  // your three-state logic for LED color:
+  if (indexer.overallStatus === 0) {
+    ledEl.style.backgroundColor = 'red';
+  } else if (indexer.runningStatus === 0) {
+    ledEl.style.backgroundColor = 'yellow';
+  } else {
+    ledEl.style.backgroundColor = 'green';
+  }
+}
+
+
+
+// Optional: Initial load
+fetchAndBuild();
 
