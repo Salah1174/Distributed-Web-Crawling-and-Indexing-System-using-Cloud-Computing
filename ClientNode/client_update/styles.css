@@ -607,6 +607,12 @@ body {
     gap: 20px;
     align-items: center;
   }
+
+  .crawler-container {
+    display: flex;
+    flex-direction: column;  /* Align dropdowns vertically */
+    gap: 10px;               /* Space between dropdowns */
+  }
   
   .custom-dropdown {
     position: relative;
@@ -805,6 +811,8 @@ body {
     border-radius: 10px;
 }
 
+
+
 .app th,
 .app td {
     text-align: center;
@@ -841,4 +849,66 @@ body {
     to{
         transform: translateX(100%);
     }
+}
+
+
+/* Navigation Bar */
+.navbar {
+    background-color: transparent;
+    color: rgb(12, 2, 2);
+    padding: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nav-button {
+    background-color: #0ea5e9;
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    cursor: pointer;
+    font-size: 16px;
+    pointer-events: auto;
+    z-index: 1000;
+}
+
+.nav-button:hover {
+    background-color: #555;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    right: -500px; /* Initially hidden off-screen */
+    /* width: 100%; */
+    height: 100%;
+    background-color: transparent;
+    box-shadow: -2px 0 5px rgba(0, 0, 0, 0.5);
+    overflow-y: auto;
+    transition: right 0.3s ease;
+    z-index: 1000;
+}
+
+.sidebar.active {
+    right: 0; 
+}
+
+
+
+.sidebar .stat {
+  margin-bottom: 20px;
+  font-size: 1.2em;
+  color: #fff;
+}
+
+.sidebar .stat p {
+  margin: 0;
+  font-weight: bold;
+}
+
+.sidebar .stat span {
+  font-size: 1.5em;
+  color: #293d58;
 }

@@ -61,28 +61,40 @@
             <div id="title-container">
                 <h1>Nodes Monitoring</h1>
                 <span>
-                    <h2><i class="fas fa-sync-alt"></i></h2>
+                    <h2><i class="fas fa-sync-alt refresh-icon"></i></h2>
                     <h6 style="margin-left: 5px;">Date:06/05/2025, 06:56 AM</h6>
                 </span>
             </div>
             <h3>Nodes Status:</h3>
             <div class="inputs">
                 <div>
-                    <div class="custom-dropdown">
+                    <!-- <div class="custom-dropdown">
                         <label for="crawler" class="dropdown-label">Crawler Picker</label>
                         <div class="dropdown-container">
                           <button class="dropdown-btn" type="button">Select Crawler</button>
-                          <div class="led"></div>
+
+                          <div class="led"></div> -->
+                          <!-- <div class="dropdown-options"> will be populated by JS </div>
+                        </div>
+                    </div> -->
+                      
+                          <!-- <div class="led"></div>
                           <div class="dropdown-options">
                             <div class="option" data-value="option1">Main Crawler</div>
                             <div class="option" data-value="option2">Crawler#1</div>
                             <div class="option" data-value="option3">Crawler#2</div>
                           </div>
                         </div>
+                    </div> -->
+
+
+                    <div class="crawler-container">
+                        <!-- Each crawler's dropdown and LED will be dynamically added here -->
                     </div>
+                      
                 </div>
                 <div>
-                    <div class="custom-dropdown">
+                    <!-- <div class="custom-dropdown">
                         <label for="indexer" class="dropdown-label">Indexer Picker</label>
                         <div class="dropdown-container">
                           <button class="dropdown-btn" type="button">Select Indexer</button>
@@ -93,10 +105,13 @@
                             <div class="option" data-value="option3">Indexer#2</div>
                           </div>
                         </div>
+                    </div> -->
+                    <div class="indexer-container">
+                        <!-- Each indexer's dropdown and LED will be dynamically added here -->
                     </div>
                 </div>
                 <div>
-                    <div class="custom-dropdown">
+                    <!-- <div class="custom-dropdown">
                         <label for="indexer" class="dropdown-label">Master Picker</label>
                         <div class="dropdown-container">
                           <button class="dropdown-btn" type="button">Select Master</button>
@@ -106,24 +121,26 @@
                             <div class="option" data-value="option2">Master#1</div>
                           </div>
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </div>
             <div id="button-container">
-                <button id="showCriticalStatus" onclick="showCriticalStatus()">Show Critical Status</button>
-                <button id="checkInstanceInfo" onclick="checkInstanceInfo()">Check Instance Info</button>
+                <button id="showCriticalStatus" onclick="showCriticalStatus()">Crawler Critical Status</button>
+                <button id="checkInstanceInfo" onclick="checkInstanceInfo()">Crawler Info</button>
+                <button id="showCriticalStatusIndx" onclick="showCriticalStatusIndx()">Indexer Critical Status</button>
+                <button id="checkInstanceInfoIndx" onclick="checkInstanceInfoIndx()">Indexer Info</button>
                 <button id="submit" onclick="displayGraph()">Display Graph</button>
                 <!-- IMPORTANT NOTE: Leave it as submit, or styling bybooz m3rfsh leh-->
             </div>
             <!-- Table 1: Instance Information -->
-            <div id="table1" class="hidden" style="width: 100%; height: 400px;">
+            <div id="table1" class="hidden" style="width: 100%; max-height: 200px; overflow-y: auto;">
                 <table>
                     <thead>
                         <tr>
                             <th>Instance ID</th>
                             <th>CPU Usage (%)</th>
-                            <th>Public IP</th>
-                            <th>Storage Usage (%)</th>
+                            <!-- <th>Public IP</th> -->
+                            <!-- <th>Storage Usage (%)</th> -->
                             <th>Status</th>
                         </tr>
                     </thead>
@@ -134,13 +151,13 @@
             </div>
 
             <!-- Table 2: Critical Status -->
-            <div id="table2" class="hidden" style="width: 100%; height: 400px;">
+            <div id="table2" class="hidden" style="width: 100%; max-height: 200px; overflow-y: auto;">
                 <table>
                     <thead>
                         <tr>
                             <th>Node Name</th>
                             <th>CPU Usage (%)</th>
-                            <th>Storage Usage (%)</th>
+                            <!-- <th>Storage Usage (%)</th> -->
                             <th>Status</th>
                             <th>Alert</th>
                         </tr>
@@ -152,7 +169,7 @@
             </div>
 
              <!-- Graph Section -->
-             <div id="graphSection" class="hidden" style="width: 100%; height: 400px;">
+             <div id="graphSection" class="hidden" style="width: 100%; height: 240px;">
                 <canvas id="cpuGraph"></canvas>
             </div>
 
@@ -180,6 +197,28 @@
                 </tbody>
             </table>
         </div>
+        <div class="navbar">
+            <button id="toggleSidebar" class="nav-button">☰ System Stats</button>
+        </div> 
+
+        <div id="sidebar" class="sidebar">
+        <!-- <div class="container3"> -->
+            <div class="window">
+                <div class="overlay"></div>
+                <div class="content1">
+                    <div class="welcome">System Stats</div>
+                    <div class="stat">
+                        <div class = "statstitles">Crawled URLs:</div>
+                        <span id="crawledCount">0</span>
+                    </div>
+                    <div class="stat">
+                        <div class="statstitles">Indexed URLs:</div>
+                        <span id="indexedCount">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Font Awesome JS CDN -->
         <script src=
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js"
@@ -206,7 +245,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://44.204.18.153:5000/send', {
+        const response = await fetch('http://3.86.162.149:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -248,7 +287,7 @@ async function submitSearchAndDisplayResults() {
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://44.204.18.153:5000/send-search', {
+            const response = await fetch('http://3.86.162.149:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -262,7 +301,7 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://44.204.18.153:5000/get-search-results', {
+        const resultsResponse = await fetch('http://3.86.162.149:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -317,6 +356,28 @@ document.getElementById('keywords').addEventListener('keydown', function (event)
 });
 
 
+
+function updateStats(crawled, indexed) {
+    document.getElementById('crawledCount').textContent = crawled;
+    document.getElementById('indexedCount').textContent = indexed;
+    // console.log('[Client] Updated stats:', crawled, indexed);
+}
+
+async function fetchStats() {
+    try {
+        const response = await fetch('http://3.86.162.149:5000/get-stats', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+        console.log('[Client] Stats:', data);
+        updateStats(data.crawledCount , data.indexedCount );
+    } catch (err) {
+        console.error('[Client] Failed to fetch stats:', err);
+    }
+}
+
 // const resultsContainer = document.getElementById('resultsContainer');
 // resultsContainer.innerHTML = ''; // Clear previous results
 
@@ -351,6 +412,15 @@ document.getElementById('keywords').addEventListener('keydown', function (event)
 //     // Append the result to the results container
 //     resultsContainer.appendChild(resultDiv);
 // });
+
+
+/* Testing retreiving the crawler status */
+// const API = 'http://3.83.38.79:5001';
+
+// fetch(`${API}/crawler-status`)
+//   .then(r => r.json())
+//   .then(data => console.log(data));
+
 
 
 </script>
