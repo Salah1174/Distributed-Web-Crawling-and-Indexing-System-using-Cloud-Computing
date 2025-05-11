@@ -1,4 +1,3 @@
-
 # Scrapy settings for learncrawling project
 #
 # For simplicity, this file contains only settings considered important or
@@ -19,6 +18,9 @@ NEWSPIDER_MODULE = "learncrawling.spiders"
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
+
+DEPTH_LIMIT = 4  # or whatever depth you want
+
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
@@ -106,6 +108,4 @@ FEEDS = {
 
 FEED_URI = 'output.json'
 FEED_FORMAT = 'json'
-
-
 
