@@ -150,6 +150,8 @@
                 </table>
             </div>
 
+           
+
             <!-- Table 2: Critical Status -->
             <div id="table2" class="hidden" style="width: 100%; max-height: 200px; overflow-y: auto;">
                 <table>
@@ -164,6 +166,23 @@
                     </thead>
                     <tbody id="criticalStatus">
                         <!-- Critical status rows will be added dynamically here -->
+                    </tbody>
+                </table>
+            </div>
+
+             <div id="table3" class="hidden" style="width: 100%; max-height: 200px; overflow-y: auto;">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Instance ID</th>
+                            <th>CPU Usage (%)</th>
+                            <th>Public IP</th>
+                            <th>Storage Usage (%)</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="instanceInfo2">
+                        <!-- Instance info rows will be added dynamically here -->
                     </tbody>
                 </table>
             </div>
@@ -404,48 +423,6 @@ async function fetchStats() {
     }
 }
 
-// const resultsContainer = document.getElementById('resultsContainer');
-// resultsContainer.innerHTML = ''; // Clear previous results
-
-// resultsData.results.forEach(result => {
-//     const resultDiv = document.createElement('div');
-//     resultDiv.classList.add('result-item');
-
-//     // Add title
-//     const titleElem = document.createElement('h3');
-//     titleElem.textContent = Title: ${result.title};
-//     resultDiv.appendChild(titleElem);
-
-//     // Add URL
-//     const urlElem = document.createElement('p');
-//     const urlLink = document.createElement('a');
-//     urlLink.href = result.url;
-//     urlLink.textContent = URL: ${result.url};
-//     urlLink.target = '_blank'; // Open in a new tab
-//     urlElem.appendChild(urlLink);
-//     resultDiv.appendChild(urlElem);
-
-//     // Add keywords
-//     const keywordsElem = document.createElement('p');
-//     keywordsElem.textContent = Keywords: ${result.keywords};
-//     resultDiv.appendChild(keywordsElem);
-
-//     // Add description
-//     const descriptionElem = document.createElement('p');
-//     descriptionElem.textContent = Description: ${result.description};
-//     resultDiv.appendChild(descriptionElem);
-
-//     // Append the result to the results container
-//     resultsContainer.appendChild(resultDiv);
-// });
-
-
-/* Testing retreiving the crawler status */
-// const API = 'http://3.83.38.79:5001';
-
-// fetch(`${API}/crawler-status`)
-//   .then(r => r.json())
-//   .then(data => console.log(data));
 
 
 
