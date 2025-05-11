@@ -236,7 +236,7 @@ function checkInstanceInfoIndx() {
 
     // Show table1 (Instance Info)
     document.getElementById("table1").classList.remove("hidden");
-    populateInstanceInfo(); // You can populate this with data dynamically
+    populateInstanceInfoIndx(); // You can populate this with data dynamically
     logMessage("User clicked 'Check Instance Info'");
 }
 
@@ -501,7 +501,7 @@ function updateDateTime() {
 }
 setInterval(updateDateTime,1000); // kol sanya
 
-const API = 'http://3.86.162.149:5001';  // Client IP
+const API = 'http://18.233.154.100:5001';  // Client IP
 let crawlers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
 let selectedIps = {};  // Store selected IPs for each dropdown
 
