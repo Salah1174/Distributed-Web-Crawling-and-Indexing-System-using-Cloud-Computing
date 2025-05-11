@@ -185,6 +185,7 @@ document.querySelectorAll('.custom-dropdown').forEach(container => {
 function showCriticalStatus() {
   // hide the others
   document.getElementById("table1").classList.add("hidden");
+  document.getElementById("table3").classList.add("hidden");
   document.getElementById("graphSection").classList.add("hidden");
 
   // 1) populate the rows
@@ -203,6 +204,7 @@ function showCriticalStatus() {
 function checkInstanceInfo() {
     // Hide other sections
     document.getElementById("table2").classList.add("hidden");
+    document.getElementById("table3").classList.add("hidden");
     document.getElementById("graphSection").classList.add("hidden");
 
     // Show table1 (Instance Info)
@@ -211,10 +213,42 @@ function checkInstanceInfo() {
     logMessage("User clicked 'Check Instance Info'");
 }
 
+function showCriticalStatusIndx() {
+  // hide the others
+  document.getElementById("table1").classList.add("hidden");
+  document.getElementById("table3").classList.add("hidden");
+  document.getElementById("graphSection").classList.add("hidden");
+
+  // 1) populate the rows
+  populateCriticalStatusIndx();
+
+  // 2) then un‑hide the table if there are any rows
+  const hasCritical = 
+    document.getElementById("criticalStatus").children.length > 0;
+  document.getElementById("table2")
+          .classList.toggle("hidden", !hasCritical);
+
+  logMessage("User clicked 'Show Critical Status'");
+}
+
+
+function checkInstanceInfoIndx() {
+    // Hide other sections
+    document.getElementById("table1").classList.add("hidden");
+    document.getElementById("table2").classList.add("hidden");
+    document.getElementById("graphSection").classList.add("hidden");
+
+    // Show table1 (Instance Info)
+    document.getElementById("table3").classList.remove("hidden");
+    populateInstanceInfoIndx(); // You can populate this with data dynamically
+    logMessage("User clicked 'Check Instance Info'");
+}
+
 function displayGraph() {
     // Hide other sections
     document.getElementById("table1").classList.add("hidden");
     document.getElementById("table2").classList.add("hidden");
+    document.getElementById("table3").classList.add("hidden");
 
     // Show graph section
     document.getElementById("graphSection").classList.remove("hidden");
@@ -284,6 +318,7 @@ function populateGraph() {
 function displayGraph() {
   document.getElementById("table1").classList.add("hidden");
   document.getElementById("table2").classList.add("hidden");
+  document.getElementById("table3").classList.add("hidden");
   document.getElementById("graphSection").classList.remove("hidden");
 
   populateGraph();
@@ -326,14 +361,14 @@ function populateInstanceInfo() {
   tbody.innerHTML = "";                 // clear existing
 
   crawlers.forEach(c => {
-    // derive status text to match your LED logic
+    // derive status text to match LED logic
     const statusText = c.overallStatus === 0
       ? "Offline"
       : c.runningStatus === 0
         ? "Warning"
         : "Healthy";
 
-    // if your backend ever returns an instance_id field, use it; else fall back to IP
+    // if backend ever returns an instance_id field, use it; else fall back to IP
     const instanceId = c.instance_id || c.ip_address;
 
     const row = document.createElement("tr");
@@ -415,14 +450,126 @@ function renderGraph() {
 
 
 
+// Indexer info populating 
+
+
+async function populateInstanceInfoIndx() {
+    try {
+        const response = await fetch('http://3.88.164.191:5000/get-indexer-info', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+        console.log('[Client] Instance info:', data);
+
+        let instanceInfo = data.instanceInfo || [];
+        if (!Array.isArray(instanceInfo)) {
+            instanceInfo = [instanceInfo];
+        }
+
+        const output = document.getElementById("instanceInfo2");
+        output.innerHTML = ""; 
+
+        instanceInfo.forEach(info => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${info.instanceId}</td>
+                <td>${info.cpuUsage}%</td>
+                <td>${info.publicIp}</td>
+                <td>${info.storageUsage}%</td>
+                <td>${info.status}</td>
+                
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch instance info:', err);
+    }
+    document.getElementById("table3").classList.remove("hidden");
+}
+
+async function populateCriticalStatusIndx() {
+    try {
+        const response = await fetch('http://3.88.164.191:5000/get-critical-status', {
+            method: 'GET',
+            mode: 'cors',
+            cache: 'no-cache'
+        });
+        const data = await response.json();
+
+        const criticalStatus = data.crawlerInfo || [];
+        const output = document.getElementById("criticalStatus");
+        output.innerHTML = ""; // Clear existing rows
+
+        criticalStatus.forEach(status => {
+            const row = document.createElement("tr");
+            row.innerHTML = `
+                <td>${status.nodeName || "Unknown"}</td>
+                <td>${status.cpuUsage || "N/A"}%</td>
+                <td>${status.storageUsage || "N/A"}%</td>
+                <td>${status.status || "N/A"}</td>
+                <td>${status.alert || "N/A"}</td>
+            `;
+            output.appendChild(row);
+        });
+    } catch (err) {
+        console.error('[Client] Failed to fetch critical status:', err);
+    }
+    // document.getElementById("table2").classList.remove("hidden"); //unhide
+}
+
+
+
+
+
+//Side Bar
+
+
+
+document.addEventListener('DOMContentLoaded', () => {
+    const sidebar = document.getElementById('sidebar');
+    const toggleButton = document.getElementById('toggleSidebar');
+
+    toggleButton.addEventListener('click', (event) => {
+        sidebar.classList.toggle('active');
+        event.stopPropagation(); 
+    });
+
+    document.addEventListener('click', (event) => {
+        if (!sidebar.contains(event.target) && !toggleButton.contains(event.target)) {
+            sidebar.classList.remove('active');
+        }
+    });
+});
+
+function clearResultsContainer() {
+    const resultsContainer = document.getElementById('resultsContainer');
+    while (resultsContainer.firstChild) {
+        resultsContainer.removeChild(resultsContainer.firstChild);
+    }
+}
+
+function updateStats(crawled, indexed) {
+    document.getElementById('crawledCount').textContent = crawled;
+    document.getElementById('indexedCount').textContent = indexed;
+}
+
+function updateDateTime() {
+    const dateElement = document.querySelector('#title-container h6');
+    const now = new Date();
+    dateElement.textContent = `Date: ${now.toLocaleDateString()}, ${now.toLocaleTimeString()}`;
+}
+setInterval(updateDateTime,1000); // kol sanya
 
 
 
 /******************Update the status of crawler***********************/
-//I removed all the commented code in this commit 
 
 
-const API = 'http://52.22.150.90:5001';  // Client IP
+
+
+const API = 'http://3.88.164.191:5001';  // Client IP
 let crawlers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
 let selectedIps = {};  // Store selected IPs for each dropdown
 
@@ -550,6 +697,139 @@ function lightLEDFor(crawler, ledEl) {
     ledEl.style.backgroundColor = 'green';
   }
 }
+
+
+
+
+/* Same for Indexer */
+
+// Feel free to do this differently, whatever best suits your implementation for indexer stats  
+
+
+let indexers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
+let selectedIndxIps = {};  // Store selected IPs for each dropdown
+
+// Map array index → human label
+const indexerLabels = ['Indexer#1', 'Indexer#2', 'Indexer#3'];
+
+// Fetch on icon click
+document.querySelector('.refresh-icon')
+  .addEventListener('click', fetchAndBuildIndx);
+
+// Fetch + build dropdown + light LED
+async function fetchAndBuildIndx() {
+  try {
+    const instanceInfo = data.instanceInfo || [];
+  if (!Array.isArray(instanceInfo) || instanceInfo.length === 0) {
+    console.warn('No indexers returned');
+    return;
+  }
+    indexers = instanceInfo;
+    buildDropdownsIndx(); // Build dropdowns for each 
+  } catch (err) {
+    console.error('Fetch error:', err);
+  }
+}
+
+// Build dropdowns for each 
+function buildDropdownsIndx() {
+  const container = document.querySelector('.indexer-container');
+  container.innerHTML = '';  // Clear previous indexers
+  
+  indexers.forEach((indexer, idx) => {
+    // Create individual dropdown and LED elements for each 
+    const indexerDiv = document.createElement('div');
+    indexerDiv.classList.add('custom-dropdown');
+
+    const dropdownLabel = document.createElement('label');
+    dropdownLabel.textContent = `Indexer Picker ${idx + 1}`;
+    dropdownLabel.classList.add('dropdown-label');
+
+    const dropdownContainer = document.createElement('div');
+    dropdownContainer.classList.add('dropdown-container');
+
+    const dropdownBtn = document.createElement('button');
+    dropdownBtn.classList.add('dropdown-btn');
+    dropdownBtn.textContent = 'Select indexer';
+    dropdownBtn.disabled = true;  // Make button unclickable
+
+    const ledEl = document.createElement('div');
+    ledEl.classList.add('led');
+
+    const dropdownOptions = document.createElement('div');
+    dropdownOptions.classList.add('dropdown-options');
+
+    // Append elements to the dropdown container
+    dropdownContainer.appendChild(dropdownBtn);
+    dropdownContainer.appendChild(ledEl);
+    dropdownContainer.appendChild(dropdownOptions);
+
+    // Append everything to the main crawler div
+    indexerDiv.appendChild(dropdownLabel);
+    indexerDiv.appendChild(dropdownContainer);
+
+    // Append the crawler div to the main container
+    container.appendChild(indexerDiv);
+
+    // Setup dropdown functionality for this crawler
+    setupDropdownIndx(indexer, dropdownBtn, dropdownOptions, ledEl, idx);
+  });
+}
+
+// Set up the dropdown for each individual crawler
+function setupDropdownIndx(indexer, dropdownBtn, dropdownOptions, ledEl, idx) {
+  // Build the options based on the crawler's status
+  dropdownOptions.innerHTML = '';
+  const option = document.createElement('div');
+  option.classList.add('option');
+  option.dataset.ip = indexer.publicIp;
+  option.textContent = indexerLabels[idx] || indexer.publicIp;
+
+  option.addEventListener('click', () => {
+    selectedIndxIps[indexer.publicIp] = indexer.publicIp;
+    dropdownBtn.textContent = option.textContent;
+    dropdownOptions.classList.remove('show');
+    lightLEDForIndx(indexer, ledEl);
+  });
+
+  dropdownOptions.appendChild(option);
+
+  // Update button text on rebuild
+  dropdownBtn.textContent = indexerLabels[idx] || indexer.publicIp;
+
+  // Toggle dropdown visibility
+  dropdownBtn.addEventListener('click', (e) => {
+    e.preventDefault();  // Prevent default action (click)
+    dropdownOptions.classList.toggle('show');
+  });
+
+  // Light LED based on crawler status
+  lightLEDForIndx(indexer, ledEl);
+
+
+// // If red, enable button and add delete behavior
+//   if (indexer.overallStatus === 0) {
+//     dropdownBtn.disabled = false;
+//     dropdownBtn.addEventListener('click', () => {
+//       dropdownBtn.closest('.custom-dropdown').remove();
+//     });
+//   }
+}
+
+// LED coloring helper
+function lightLEDForIndx(indexer, ledEl) {
+  if (!indexer || !ledEl) return;
+
+  if (indexer.status === "Healthy") {
+    ledEl.style.backgroundColor = 'green';
+  } else if (indexer.status === "Warning") {
+    ledEl.style.backgroundColor = 'yellow';
+  } else {
+    ledEl.style.backgroundColor = 'gray'; 
+  }
+}
+
+
 
 // Optional: Initial load
 fetchAndBuild();
