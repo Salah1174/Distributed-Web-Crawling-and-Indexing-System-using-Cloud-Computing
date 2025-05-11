@@ -255,11 +255,11 @@ def process_crawler_output_messages():
                     print(
                         f"Skipping already processed URL: {new_url} ({current_status})")
 
-            # ✅ Mark seed URL as CRAWLED
+            # Mark seed URL as CRAWLED
             update_url_status(seed_url, 'CRAWLED')
             print(f"Marked seed URL as CRAWLED: {seed_url}")
 
-            # ✅ Delete message after processing
+            # Delete message after processing
             sqs.delete_message(QueueUrl=crawler_queue_output_url,
                                ReceiptHandle=message['ReceiptHandle'])
 
