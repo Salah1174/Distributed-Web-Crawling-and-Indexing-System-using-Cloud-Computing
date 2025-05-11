@@ -536,9 +536,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+function clearResultsContainer() {
+    const resultsContainer = document.getElementById('resultsContainer');
+    while (resultsContainer.firstChild) {
+        resultsContainer.removeChild(resultsContainer.firstChild);
+    }
+}
 
 function updateStats(crawled, indexed) {
-    document.getElementById('crawledCount').textContent = indexed;
+    document.getElementById('crawledCount').textContent = crawled;
     document.getElementById('indexedCount').textContent = indexed;
 }
 
