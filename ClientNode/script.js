@@ -449,7 +449,7 @@ function renderGraph() {
 
 async function populateInstanceInfoIndx() {
     try {
-        const response = await fetch('http://3.83.44.72:5000/get-indexer-info', {
+        const response = await fetch('http://3.88.164.191:5000/get-indexer-info', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -484,7 +484,7 @@ async function populateInstanceInfoIndx() {
 
 async function populateCriticalStatusIndx() {
     try {
-        const response = await fetch('http://3.83.44.72:5000/get-critical-status', {
+        const response = await fetch('http://3.88.164.191:5000/get-critical-status', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -562,7 +562,7 @@ setInterval(updateDateTime,1000); // kol sanya
 
 
 
-const API = 'http://3.83.44.72:5001';  // Client IP
+const API = 'http://3.88.164.191:5001';  // Client IP
 let crawlers = [];     // [{ ip_address, runningStatus, overallStatus }, …]
 let selectedIps = {};  // Store selected IPs for each dropdown
 

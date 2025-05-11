@@ -246,7 +246,7 @@ async function sendSeedToSQS() {
     console.log('[Client] Preparing to send payload:', payload);
 
     try {
-        const response = await fetch('http://3.83.44.72:5000/send', {
+        const response = await fetch('http://3.88.164.191:5000/send', {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -298,7 +298,7 @@ async function submitSearchAndDisplayResults() {
         const payload = { keywords };
 
         try {
-            const response = await fetch('http://3.83.44.72:5000/send-search', {
+            const response = await fetch('http://3.88.164.191:5000/send-search', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload),
@@ -312,7 +312,7 @@ async function submitSearchAndDisplayResults() {
         }
 
         // fetch 
-        const resultsResponse = await fetch('http://3.83.44.72:5000/get-search-results', {
+        const resultsResponse = await fetch('http://3.88.164.191:5000/get-search-results', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
@@ -391,7 +391,7 @@ function updateStats(crawled, indexed) {
 
 async function fetchStats() {
     try {
-        const response = await fetch('http://3.83.44.72:5000/get-stats', {
+        const response = await fetch('http://3.88.164.191:5000/get-stats', {
             method: 'GET',
             mode: 'cors',
             cache: 'no-cache'
