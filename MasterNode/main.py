@@ -17,10 +17,10 @@ master_client_crawlerstatus = 'https://sqs.us-east-1.amazonaws.com/608542499503/
 
 
 # Database setup
-rds_host = 'rds-test.cyv2uaoamjlb.us-east-1.rds.amazonaws.com'
-rds_user = 'admin'
-rds_password = 'admin123'
-rds_db = 'urls'
+rds_host = ''
+rds_user = ''
+rds_password = ''
+rds_db = ''
 
 
 def get_db_connection():
